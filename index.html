@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Canivete TP - Dashboard</title>
+  <link rel="icon" href="icons/icon-32.png" type="image/png">
+  <link rel="stylesheet" href="dashboard.css">
+  <!-- Google Fonts para UI e Criação de Thumbnails -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&family=Montserrat:wght@400;600;700;800;900&family=Oswald:wght@500;600;700&family=Poppins:wght@400;600;700;800;900&family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+</head>
+<body class="dark-theme">
+  <div class="app-layout">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="brand">
+        <img src="icons/icon-48.png" alt="Canivete TP" width="36" height="36">
+        <div class="brand-text">
+          <h2>Canivete TP</h2>
+          <span class="badge">Dashboard v1.7.0</span>
+        </div>
+      </div>
+
+      <nav class="nav-menu">
+        <button class="nav-item active" data-tab="templatesTab">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          <span>Templates de Texto</span>
+        </button>
+        <button class="nav-item" data-tab="thumbnailsTab">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>
+          <span>Criador de Thumbnails</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="tip-card">
+          <span class="tip-icon">💡</span>
+          <p>Cole imagens em qualquer lugar com <strong>Ctrl+V</strong> no Criador de Thumbnails!</p>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      
+      <!-- ============================================== -->
+      <!-- TAB 1: TEMPLATES DE TEXTO                     -->
+      <!-- ============================================== -->
+      <section id="templatesTab" class="tab-pane active">
+        <header class="tab-header">
+          <div>
+            <h1>Templates de Texto</h1>
+            <p class="subtitle">Guarde descrições de vídeos, links frequentes, assinaturas e estruturas para copiar com 1 clique.</p>
+          </div>
+          <div class="header-actions">
+            <button id="importTemplatesBtn" class="btn btn-secondary" title="Restaurar de arquivo JSON">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <span>Importar</span>
+            </button>
+            <input type="file" id="importFileInput" accept=".json" style="display: none;">
+            <button id="exportTemplatesBtn" class="btn btn-secondary" title="Fazer backup dos templates">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <span>Exportar</span>
+            </button>
+            <button id="newTemplateBtn" class="btn btn-primary">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <span>Novo Template</span>
+            </button>
+          </div>
+        </header>
+
+        <!-- Filters & Search -->
+        <div class="filter-bar">
+          <div class="search-box">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="templateSearchInput" placeholder="Buscar por título, conteúdo ou categoria...">
+          </div>
+          <div class="category-pills" id="categoryPills">
+            <button class="pill active" data-category="all">Todos</button>
+            <button class="pill" data-category="YouTube">YouTube</button>
+            <button class="pill" data-category="Blog">Blog</button>
+            <button class="pill" data-category="Afiliados">Afiliados</button>
+            <button class="pill" data-category="Geral">Geral</button>
+          </div>
+        </div>
+
+        <!-- Templates Grid -->
+        <div class="templates-grid" id="templatesGrid">
+          <!-- Injected dynamically via JS -->
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- TAB 2: CRIADOR DE THUMBNAILS & IMAGENS         -->
+      <!-- ============================================== -->
+      <section id="thumbnailsTab" class="tab-pane">
+        
+        <!-- Top Toolbar -->
+        <div class="editor-top-bar">
+          <div class="preset-selector-group">
+            <label for="canvasPresetSelect">Tamanho:</label>
+            <select id="canvasPresetSelect" class="form-select">
+              <option value="1280x720" selected>YouTube Thumbnail (1280 × 720 - 16:9)</option>
+              <option value="1920x1080">Full HD (1920 × 1080 - 16:9)</option>
+              <option value="1080x1080">Post Quadrado / Comunidade (1080 × 1080 - 1:1)</option>
+              <option value="1080x1920">Shorts / Reels / Stories (1080 × 1920 - 9:16)</option>
+              <option value="2560x1440">YouTube Banner / Capa (2560 × 1440)</option>
+              <option value="custom">Personalizado...</option>
+            </select>
+            <div id="customDimensionsGroup" class="custom-dims-group hidden">
+              <input type="number" id="customWidthInput" value="1280" min="100" max="4000" placeholder="L">
+              <span>×</span>
+              <input type="number" id="customHeightInput" value="720" min="100" max="4000" placeholder="A">
+              <button id="applyCustomDimBtn" class="btn btn-xs btn-secondary">OK</button>
+            </div>
+          </div>
+
+          <div class="top-bar-actions">
+            <!-- Safe Zone Guide Toggle -->
+            <button id="toggleSafeZoneBtn" class="btn btn-secondary btn-icon-toggle active" title="Mostrar/Ocultar Guia do Selo de Tempo do YouTube (canto inferior direito)">
+              <span class="yt-badge-icon">0:00</span>
+              <span>Guia YouTube</span>
+            </button>
+
+            <!-- Undo / Redo -->
+            <div class="btn-group">
+              <button id="undoBtn" class="btn btn-secondary btn-icon" title="Desfazer (Ctrl+Z)" disabled>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+              </button>
+              <button id="redoBtn" class="btn btn-secondary btn-icon" title="Refazer (Ctrl+Shift+Z)" disabled>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/></svg>
+              </button>
+            </div>
+
+            <button id="clearCanvasBtn" class="btn btn-secondary btn-danger-hover" title="Limpar tudo">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              <span>Limpar</span>
+            </button>
+
+            <!-- Export buttons -->
+            <button id="copyImageBtn" class="btn btn-secondary" title="Copiar imagem renderizada para a Área de Transferência">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <span>Copiar Imagem</span>
+            </button>
+
+            <button id="exportJpgBtn" class="btn btn-secondary" title="Baixar como imagem JPG otimizada">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <span>Baixar JPG</span>
+            </button>
+
+            <button id="exportPngBtn" class="btn btn-primary" title="Baixar como imagem PNG de alta definição">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <span>Baixar PNG</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Studio Body Layout (Tools Sidebar + Canvas Stage + Properties Inspector) -->
+        <div class="studio-layout">
+          
+          <!-- Left Tool Palette -->
+          <div class="studio-tools">
+            <button id="toolAddText" class="tool-btn" title="Adicionar Texto de Alto Impacto">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+              <span>Texto</span>
+            </button>
+
+            <button id="toolUploadImage" class="tool-btn" title="Adicionar Imagem do Computador ou Cole com Ctrl+V">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              <span>Imagem</span>
+            </button>
+            <input type="file" id="imageFileInput" accept="image/*" style="display: none;">
+
+            <button id="toolAddBadge" class="tool-btn" title="Adicionar Tarja / Retângulo de Destaque">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></svg>
+              <span>Forma / Tarja</span>
+            </button>
+
+            <div class="tool-divider"></div>
+
+            <div class="tool-section-title">Fundo</div>
+            <div class="bg-color-swatches">
+              <button class="swatch-btn" data-color="#0f172a" style="background: #0f172a;" title="Azul Escuro"></button>
+              <button class="swatch-btn" data-color="#000000" style="background: #000000;" title="Preto Puro"></button>
+              <button class="swatch-btn" data-color="#b91c1c" style="background: #b91c1c;" title="Vermelho YouTube"></button>
+              <button class="swatch-btn" data-color="#1e3a8a" style="background: #1e3a8a;" title="Azul"></button>
+              <button class="swatch-btn" data-color="#047857" style="background: #047857;" title="Verde"></button>
+              <button class="swatch-btn" data-color="#6d28d9" style="background: #6d28d9;" title="Roxo"></button>
+              <button class="swatch-btn" data-color="#ff5722" style="background: #ff5722;" title="Laranja TP"></button>
+              <button class="swatch-btn" data-color="#ffffff" style="background: #ffffff;" title="Branco"></button>
+            </div>
+            
+            <div class="custom-bg-picker">
+              <label for="canvasBgColorInput">Cor de Fundo:</label>
+              <input type="color" id="canvasBgColorInput" value="#0f172a">
+            </div>
+
+            <div class="tool-divider"></div>
+
+            <!-- Camadas / Layers List -->
+            <div class="tool-section-title">Camadas</div>
+            <div class="layers-container" id="layersContainer">
+              <!-- Layers rendered dynamically -->
+            </div>
+          </div>
+
+          <!-- Center Canvas Stage Viewport -->
+          <div class="canvas-viewport" id="canvasViewport">
+            <div class="canvas-container" id="canvasContainer">
+              <canvas id="mainCanvas" width="1280" height="720"></canvas>
+              
+              <!-- Safe zone overlay container -->
+              <div id="safeZoneOverlay" class="safe-zone-overlay">
+                <div class="yt-time-badge-mock">00:00</div>
+              </div>
+            </div>
+            
+            <!-- Paste Instruction Banner -->
+            <div class="paste-banner">
+              <span>📋 Dica: Pressione <strong>Ctrl + V</strong> (ou <strong>Cmd + V</strong>) a qualquer momento para colar imagens direto aqui.</span>
+            </div>
+          </div>
+
+          <!-- Right Properties Inspector -->
+          <div class="properties-panel" id="propertiesPanel">
+            
+            <div class="empty-selection-msg" id="emptySelectionMsg">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <p>Nenhum elemento selecionado</p>
+              <span>Clique em um texto ou imagem no canvas para editar suas propriedades.</span>
+            </div>
+
+            <!-- Context Inspector for TEXT -->
+            <div class="inspector-section hidden" id="textInspector">
+              <h3>Propriedades do Texto</h3>
+              
+              <div class="form-group">
+                <label for="propTextContent">Texto:</label>
+                <textarea id="propTextContent" rows="2" class="form-textarea"></textarea>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="propFontFamily">Fonte:</label>
+                  <select id="propFontFamily" class="form-select">
+                    <option value="'Bebas Neue', cursive" style="font-family: 'Bebas Neue';">Bebas Neue (YouTube)</option>
+                    <option value="'Anton', sans-serif" style="font-family: 'Anton';">Anton (Impactante)</option>
+                    <option value="'Montserrat', sans-serif" style="font-family: 'Montserrat';">Montserrat (Bold)</option>
+                    <option value="'Oswald', sans-serif" style="font-family: 'Oswald';">Oswald (Vertical)</option>
+                    <option value="'Poppins', sans-serif" style="font-family: 'Poppins';">Poppins (Moderno)</option>
+                    <option value="'Roboto', sans-serif" style="font-family: 'Roboto';">Roboto</option>
+                    <option value="'Inter', sans-serif" style="font-family: 'Inter';">Inter</option>
+                    <option value="Impact, sans-serif">Impact Clássico</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="propFontSize">Tamanho:</label>
+                  <input type="number" id="propFontSize" value="80" min="10" max="300">
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="propTextColor">Cor do Texto:</label>
+                  <div class="color-input-wrapper">
+                    <input type="color" id="propTextColor" value="#ffffff">
+                    <span class="color-hex" id="propTextColorHex">#ffffff</span>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="propFontWeight">Peso / Estilo:</label>
+                  <select id="propFontWeight" class="form-select">
+                    <option value="400">Normal</option>
+                    <option value="700">Negrito</option>
+                    <option value="900" selected>Extra Black (900)</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Quick Style Presets for YouTube -->
+              <div class="style-presets-section">
+                <label>Estilos Prontos:</label>
+                <div class="preset-buttons">
+                  <button class="style-preset-btn" data-preset="yt-yellow">Amarelo C/ Borda</button>
+                  <button class="style-preset-btn" data-preset="yt-white-red">Branco C/ Fundo Vermelho</button>
+                  <button class="style-preset-btn" data-preset="yt-green">Verde Neon</button>
+                  <button class="style-preset-btn" data-preset="yt-fire">Fogo / Laranja</button>
+                </div>
+              </div>
+
+              <!-- Text Outline / Stroke -->
+              <div class="collapsible-group">
+                <div class="group-title">
+                  <span>Contorno (Stroke)</span>
+                  <label class="toggle-switch-sm">
+                    <input type="checkbox" id="propStrokeEnabled" checked>
+                    <span class="slider-sm"></span>
+                  </label>
+                </div>
+                <div class="group-content" id="strokeControls">
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="propStrokeColor">Cor do Contorno:</label>
+                      <input type="color" id="propStrokeColor" value="#000000">
+                    </div>
+                    <div class="form-group">
+                      <label for="propStrokeWidth">Espessura (<span id="propStrokeWidthVal">12</span>px):</label>
+                      <input type="range" id="propStrokeWidth" min="1" max="40" value="12">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Text Shadow / Glow -->
+              <div class="collapsible-group">
+                <div class="group-title">
+                  <span>Sombra Projetada & Brilho</span>
+                  <label class="toggle-switch-sm">
+                    <input type="checkbox" id="propShadowEnabled" checked>
+                    <span class="slider-sm"></span>
+                  </label>
+                </div>
+                <div class="group-content" id="shadowControls">
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="propShadowColor">Cor da Sombra:</label>
+                      <input type="color" id="propShadowColor" value="#000000">
+                    </div>
+                    <div class="form-group">
+                      <label for="propShadowBlur">Desfoque (<span id="propShadowBlurVal">15</span>px):</label>
+                      <input type="range" id="propShadowBlur" min="0" max="60" value="15">
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="propShadowOffsetY">Distância Y:</label>
+                      <input type="number" id="propShadowOffsetY" value="6" min="-50" max="50">
+                    </div>
+                    <div class="form-group">
+                      <label for="propShadowOffsetX">Distância X:</label>
+                      <input type="number" id="propShadowOffsetX" value="0" min="-50" max="50">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Text Background Badge / Box -->
+              <div class="collapsible-group">
+                <div class="group-title">
+                  <span>Fundo do Texto (Tarja)</span>
+                  <label class="toggle-switch-sm">
+                    <input type="checkbox" id="propTextBgEnabled">
+                    <span class="slider-sm"></span>
+                  </label>
+                </div>
+                <div class="group-content hidden" id="textBgControls">
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="propTextBgColor">Cor de Fundo:</label>
+                      <input type="color" id="propTextBgColor" value="#dc2626">
+                    </div>
+                    <div class="form-group">
+                      <label for="propTextBgRadius">Arredondamento (<span id="propTextBgRadiusVal">10</span>px):</label>
+                      <input type="range" id="propTextBgRadius" min="0" max="40" value="10">
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="propTextBgPadding">Espaçamento Interno (<span id="propTextBgPaddingVal">14</span>px):</label>
+                    <input type="range" id="propTextBgPadding" min="4" max="50" value="14">
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Context Inspector for IMAGE -->
+            <div class="inspector-section hidden" id="imageInspector">
+              <h3>Propriedades da Imagem</h3>
+              
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="propImageOpacity">Opacidade (<span id="propImageOpacityVal">100</span>%):</label>
+                  <input type="range" id="propImageOpacity" min="5" max="100" value="100">
+                </div>
+                <div class="form-group">
+                  <label for="propImageRadius">Cantos (<span id="propImageRadiusVal">0</span>px):</label>
+                  <input type="range" id="propImageRadius" min="0" max="100" value="0">
+                </div>
+              </div>
+
+              <!-- Image Stroke / Border -->
+              <div class="collapsible-group">
+                <div class="group-title">
+                  <span>Borda / Contorno</span>
+                  <label class="toggle-switch-sm">
+                    <input type="checkbox" id="propImgBorderEnabled">
+                    <span class="slider-sm"></span>
+                  </label>
+                </div>
+                <div class="group-content hidden" id="imgBorderControls">
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="propImgBorderColor">Cor da Borda:</label>
+                      <input type="color" id="propImgBorderColor" value="#ffffff">
+                    </div>
+                    <div class="form-group">
+                      <label for="propImgBorderWidth">Largura (<span id="propImgBorderWidthVal">6</span>px):</label>
+                      <input type="range" id="propImgBorderWidth" min="1" max="30" value="6">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Image Shadow -->
+              <div class="collapsible-group">
+                <div class="group-title">
+                  <span>Sombra Projetada</span>
+                  <label class="toggle-switch-sm">
+                    <input type="checkbox" id="propImgShadowEnabled">
+                    <span class="slider-sm"></span>
+                  </label>
+                </div>
+                <div class="group-content hidden" id="imgShadowControls">
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="propImgShadowColor">Cor:</label>
+                      <input type="color" id="propImgShadowColor" value="#000000">
+                    </div>
+                    <div class="form-group">
+                      <label for="propImgShadowBlur">Desfoque (<span id="propImgShadowBlurVal">20</span>px):</label>
+                      <input type="range" id="propImgShadowBlur" min="0" max="60" value="20">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="quick-align-row">
+                <button id="btnFlipH" class="btn btn-secondary btn-sm" title="Espelhar Horizontalmente">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+                  <span>Espelhar H</span>
+                </button>
+                <button id="btnFitCanvas" class="btn btn-secondary btn-sm" title="Preencher Todo o Canvas">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+                  <span>Preencher Tela</span>
+                </button>
+              </div>
+
+            </div>
+
+            <!-- Context Inspector for SHAPE / BADGE -->
+            <div class="inspector-section hidden" id="shapeInspector">
+              <h3>Propriedades da Forma</h3>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="propShapeColor">Cor de Preenchimento:</label>
+                  <input type="color" id="propShapeColor" value="#ff5722">
+                </div>
+                <div class="form-group">
+                  <label for="propShapeRadius">Arredondamento (<span id="propShapeRadiusVal">12</span>px):</label>
+                  <input type="range" id="propShapeRadius" min="0" max="80" value="12">
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="propShapeOpacity">Opacidade (<span id="propShapeOpacityVal">100</span>%):</label>
+                <input type="range" id="propShapeOpacity" min="5" max="100" value="100">
+              </div>
+            </div>
+
+            <!-- General Actions (Order, Duplicate, Delete) -->
+            <div class="element-actions-section hidden" id="elementActionsSection">
+              <div class="tool-divider"></div>
+              <label>Posição da Camada & Ações:</label>
+              <div class="action-buttons-grid">
+                <button id="btnBringForward" class="btn btn-secondary btn-sm" title="Trazer para Frente">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>
+                  <span>Para Frente</span>
+                </button>
+                <button id="btnSendBackward" class="btn btn-secondary btn-sm" title="Enviar para Trás">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                  <span>Para Trás</span>
+                </button>
+                <button id="btnDuplicateObj" class="btn btn-secondary btn-sm" title="Duplicar Elemento">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  <span>Duplicar</span>
+                </button>
+                <button id="btnDeleteObj" class="btn btn-danger btn-sm" title="Excluir Elemento (Del)">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  <span>Excluir</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: CRIAR / EDITAR TEMPLATE DE TEXTO        -->
+  <!-- ============================================== -->
+  <div id="templateModal" class="modal-backdrop hidden">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h2 id="templateModalTitle">Novo Template de Texto</h2>
+        <button id="closeTemplateModalBtn" class="close-btn">&times;</button>
+      </div>
+      <form id="templateForm" class="modal-body">
+        <input type="hidden" id="templateIdInput">
+        
+        <div class="form-group">
+          <label for="templateTitleInput">Título do Template <span class="required">*</span></label>
+          <input type="text" id="templateTitleInput" placeholder="Ex: Descrição Padrão YouTube, Links de Afiliados..." required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="templateCategoryInput">Categoria</label>
+            <input type="text" id="templateCategoryInput" list="categoryOptions" placeholder="Ex: YouTube, Blog, Afiliados..." value="YouTube">
+            <datalist id="categoryOptions">
+              <option value="YouTube">
+              <option value="Blog">
+              <option value="Afiliados">
+              <option value="Geral">
+              <option value="Prompts">
+              <option value="Redes Sociais">
+            </datalist>
+          </div>
+          <div class="form-group">
+            <label for="templateTagsInput">Tags (separadas por vírgula)</label>
+            <input type="text" id="templateTagsInput" placeholder="Ex: descrição, links, padrão">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="templateContentInput">Conteúdo do Template <span class="required">*</span></label>
+          <textarea id="templateContentInput" rows="9" placeholder="Digite ou cole aqui o texto do seu template..." required></textarea>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" id="cancelTemplateBtn" class="btn btn-secondary">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar Template</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script src="dashboard.js"></script>
+</body>
+</html>
