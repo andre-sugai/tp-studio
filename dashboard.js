@@ -930,9 +930,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const clearCanvasBtn = document.getElementById('clearCanvasBtn');
   const undoBtn = document.getElementById('undoBtn');
   const redoBtn = document.getElementById('redoBtn');
-  const exportPngBtn = document.getElementById('exportPngBtn');
-  const exportJpgBtn = document.getElementById('exportJpgBtn');
-  const copyImageBtn = document.getElementById('copyImageBtn');
+  const exportDropdownWrapper = document.getElementById('exportDropdownWrapper');
+  const exportDropdownBtn = document.getElementById('exportDropdownBtn');
+  const exportDropdownMenu = document.getElementById('exportDropdownMenu');
 
   // Shortcuts Modal elements
   const shortcutsModal = document.getElementById('shortcutsModal');
@@ -3167,63 +3167,125 @@ document.addEventListener('DOMContentLoaded', () => {
   btnDeleteObj.addEventListener('click', () => canvasEngine.deleteSelected());
 
   // EXPORT ACTIONS
-  function getCleanCanvasDataUrl(format = 'image/png', quality = 0.95) {
-    const active = canvasEngine.getActiveCanvas();
-    const targetCanvas = active ? active.canvasEl : canvas;
+  function getCleanCanvasDataUrl(targetCanvasId, format = 'image/png', quality = 0.95) {
+    const target = canvasEngine.canvases.find(c => c.id === targetCanvasId) || canvasEngine.getActiveCanvas();
+    const targetCanvas = target ? target.canvasEl : canvas;
     // Render cleanly without bounding boxes
-    canvasEngine.render(canvasEngine.activeCanvasId, true);
+    canvasEngine.render(target.id, true);
     const dataUrl = targetCanvas.toDataURL(format, quality);
     // Restore selection box
-    canvasEngine.render(canvasEngine.activeCanvasId, false);
+    canvasEngine.render(target.id, false);
     return dataUrl;
   }
 
-  exportPngBtn.addEventListener('click', () => {
-    const active = canvasEngine.getActiveCanvas();
-    const dataUrl = getCleanCanvasDataUrl('image/png');
-    const a = document.createElement('a');
-    a.href = dataUrl;
-    const namePrefix = active ? active.name.toLowerCase().replace(/\s+/g, '_') : 'thumbnail';
-    a.download = `${namePrefix}_${canvasEngine.width}x${canvasEngine.height}_${Date.now()}.png`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    showToast('Imagem PNG baixada em alta resolução!', 'success');
-  });
+  function downloadCanvasImage(targetCanvasId, format = 'png') {
+    const target = canvasEngine.canvases.find(c => c.id === targetCanvasId) || canvasEngine.getActiveCanvas();
+    if (!target) return;
 
-  exportJpgBtn.addEventListener('click', () => {
-    const active = canvasEngine.getActiveCanvas();
-    const dataUrl = getCleanCanvasDataUrl('image/jpeg', 0.92);
-    const a = document.createElement('a');
-    a.href = dataUrl;
-    const namePrefix = active ? active.name.toLowerCase().replace(/\s+/g, '_') : 'thumbnail';
-    a.download = `${namePrefix}_${canvasEngine.width}x${canvasEngine.height}_${Date.now()}.jpg`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    showToast('Imagem JPG baixada com sucesso!', 'success');
-  });
+    let mime = 'image/png';
+    let quality = 0.95;
+    let ext = 'png';
 
-  copyImageBtn.addEventListener('click', async () => {
-    try {
-      const active = canvasEngine.getActiveCanvas();
-      const targetCanvas = active ? active.canvasEl : canvas;
-      canvasEngine.render(canvasEngine.activeCanvasId, true);
-      targetCanvas.toBlob(async (blob) => {
-        canvasEngine.render(canvasEngine.activeCanvasId, false);
-        if (!blob) {
-          showToast('Erro ao gerar imagem.', 'error');
-          return;
-        }
-        await navigator.clipboard.write([
-          new ClipboardItem({ 'image/png': blob })
-        ]);
-        showToast('Imagem copiada para a área de transferência! (Pode colar no WhatsApp, Discord, etc.)', 'success');
-      }, 'image/png');
-    } catch (err) {
-      console.error('Erro ao copiar imagem:', err);
-      showToast('Não foi possível copiar a imagem diretamente.', 'error');
+    if (format === 'jpg' || format === 'jpeg') {
+      mime = 'image/jpeg';
+      quality = 0.92;
+      ext = 'jpg';
+    } else if (format === 'webp') {
+      mime = 'image/webp';
+      quality = 0.92;
+      ext = 'webp';
     }
-  });
+
+    const dataUrl = getCleanCanvasDataUrl(target.id, mime, quality);
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    const namePrefix = target.name.toLowerCase().replace(/\s+/g, '_');
+    a.download = `${namePrefix}_${target.width}x${target.height}_${Date.now()}.${ext}`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    showToast(`Imagem ${ext.toUpperCase()} baixada com sucesso!`, 'success');
+  }
+
+  function downloadAllCanvases() {
+    if (canvasEngine.canvases.length === 0) return;
+    canvasEngine.canvases.forEach((c, index) => {
+      setTimeout(() => {
+        downloadCanvasImage(c.id, 'png');
+      }, index * 250);
+    });
+    showToast(`Baixando ${canvasEngine.canvases.length} canvas em PNG...`, 'info');
+  }
+
+  // Export Dropdown Toggle & Options
+  if (exportDropdownBtn && exportDropdownMenu) {
+    exportDropdownBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = !exportDropdownMenu.classList.contains('hidden');
+      if (isOpen) {
+        exportDropdownMenu.classList.add('hidden');
+        if (exportDropdownWrapper) exportDropdownWrapper.classList.remove('open');
+      } else {
+        exportDropdownMenu.classList.remove('hidden');
+        if (exportDropdownWrapper) exportDropdownWrapper.classList.add('open');
+      }
+    });
+
+    // Close on click outside
+    document.addEventListener('click', (e) => {
+      if (exportDropdownWrapper && !exportDropdownWrapper.contains(e.target)) {
+        exportDropdownMenu.classList.add('hidden');
+        exportDropdownWrapper.classList.remove('open');
+      }
+    });
+
+    // Close on escape
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && exportDropdownMenu && !exportDropdownMenu.classList.contains('hidden')) {
+        exportDropdownMenu.classList.add('hidden');
+        if (exportDropdownWrapper) exportDropdownWrapper.classList.remove('open');
+      }
+    });
+
+    async function copyCanvasToClipboard(targetCanvasId) {
+      try {
+        const target = canvasEngine.canvases.find(c => c.id === targetCanvasId) || canvasEngine.getActiveCanvas();
+        if (!target) return;
+        const targetCanvas = target.canvasEl;
+        canvasEngine.render(target.id, true);
+        targetCanvas.toBlob(async (blob) => {
+          canvasEngine.render(target.id, false);
+          if (!blob) {
+            showToast('Erro ao gerar imagem.', 'error');
+            return;
+          }
+          await navigator.clipboard.write([
+            new ClipboardItem({ 'image/png': blob })
+          ]);
+          showToast('Imagem copiada para a área de transferência! (Pode colar no WhatsApp, Discord, etc.)', 'success');
+        }, 'image/png');
+      } catch (err) {
+        console.error('Erro ao copiar imagem:', err);
+        showToast('Não foi possível copiar a imagem diretamente.', 'error');
+      }
+    }
+
+    // Option items
+    exportDropdownMenu.querySelectorAll('.export-menu-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const fmt = item.getAttribute('data-format');
+        exportDropdownMenu.classList.add('hidden');
+        if (exportDropdownWrapper) exportDropdownWrapper.classList.remove('open');
+
+        if (fmt === 'copy') {
+          copyCanvasToClipboard(canvasEngine.activeCanvasId);
+        } else if (fmt === 'all') {
+          downloadAllCanvases();
+        } else {
+          downloadCanvasImage(canvasEngine.activeCanvasId, fmt);
+        }
+      });
+    });
+  }
 
 });
