@@ -220,7 +220,13 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const localData = localStorage.getItem(TEMPLATES_STORAGE_KEY);
       if (localData) {
-        templates = JSON.parse(localData);
+        const parsed = JSON.parse(localData);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          templates = parsed;
+        } else {
+          templates = [...defaultTemplates];
+          saveTemplates();
+        }
       } else {
         templates = [...defaultTemplates];
         saveTemplates();
@@ -615,7 +621,13 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const localData = localStorage.getItem(LINKS_STORAGE_KEY);
       if (localData) {
-        quickLinks = JSON.parse(localData);
+        const parsed = JSON.parse(localData);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          quickLinks = parsed;
+        } else {
+          quickLinks = [...defaultQuickLinks];
+          saveQuickLinks();
+        }
       } else {
         quickLinks = [...defaultQuickLinks];
         saveQuickLinks();
