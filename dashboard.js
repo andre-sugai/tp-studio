@@ -1061,6 +1061,12 @@ document.addEventListener('DOMContentLoaded', () => {
       this.panStartY = 0;
       this.isSpacePressed = false;
 
+      // Visual Wire Connection state
+      this.isDraggingWire = false;
+      this.wireSourceId = null;
+      this.hoveredDropCanvasId = null;
+      this.connectionsSvg = null;
+
       this.init();
     }
 
@@ -1069,11 +1075,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     init() {
+      this.initConnectionsSvg();
       this.createCanvasBoard('1280x720', null, null, 'Canvas 1');
       this.setupEventListeners();
       this.setupInitialPreset();
       this.updateZoomTransform();
       this.saveHistory();
+    }
+
+    initConnectionsSvg() {
+      if (!canvasWorkspace) return;
+      let svg = document.getElementById('canvasConnectionsSvg');
+      if (!svg) {
+        svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.id = 'canvasConnectionsSvg';
+        svg.setAttribute('class', 'canvas-connections-svg');
+        svg.setAttribute('viewBox', '-20000 -20000 40000 40000');
+        svg.setAttribute('width', '40000');
+        svg.setAttribute('height', '40000');
+        canvasWorkspace.appendChild(svg);
+      }
+      this.connectionsSvg = svg;
     }
 
     createCanvasBoard(preset = '1280x720', x = null, y = null, name = null, initialElements = null) {
@@ -1143,6 +1165,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
           <span class="canvas-tab-badge">${w} × ${h} px</span>
 
+          <button class="canvas-sync-btn" title="Conectar este canvas para sincronizar edições em tempo real">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            <span class="sync-label">Conectar</span>
+          </button>
+
+          <button class="canvas-connector-pin" title="Puxe e solte sobre outro canvas para conectar" data-canvas-id="${id}">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v4"/><path d="M12 18v4"/><path d="M2 12h4"/><path d="M18 12h4"/></svg>
+          </button>
+
           <button class="canvas-close-btn" title="Excluir este canvas" style="display: none;">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
@@ -1168,6 +1199,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const customHeightInput = boardEl.querySelector('.custom-height-input');
       const applyCustomBtn = boardEl.querySelector('.apply-custom-btn');
       const badgeEl = boardEl.querySelector('.canvas-tab-badge');
+      const syncBtn = boardEl.querySelector('.canvas-sync-btn');
+      const connectorPin = boardEl.querySelector('.canvas-connector-pin');
       const closeBtn = boardEl.querySelector('.canvas-close-btn');
       const safeZoneOverlay = boardEl.querySelector('.safe-zone-overlay');
 
@@ -1182,6 +1215,7 @@ document.addEventListener('DOMContentLoaded', () => {
         bgColor: '#0f172a',
         elements: initialElements || [],
         selectedId: null,
+        isLinked: false,
         history: [],
         historyIndex: -1,
         showSafeZone: (w === 1280 && h === 720) || (w === 1920 && h === 1080),
@@ -1194,11 +1228,25 @@ document.addEventListener('DOMContentLoaded', () => {
         customWidthInput,
         customHeightInput,
         badgeEl,
+        syncBtn,
+        connectorPin,
         closeBtn,
         safeZoneOverlay
       };
 
       attachedTab.addEventListener('mousedown', (e) => e.stopPropagation());
+
+      syncBtn.addEventListener('mousedown', (e) => e.stopPropagation());
+      syncBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleCanvasLink(id);
+      });
+
+      connectorPin.addEventListener('mousedown', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        this.startWireDrag(id, e);
+      });
 
       boardEl.querySelectorAll('.figjam-add-btn').forEach(btn => {
         btn.addEventListener('mousedown', (e) => e.stopPropagation());
@@ -1298,6 +1346,342 @@ document.addEventListener('DOMContentLoaded', () => {
       this.renderLayers();
       this.updateHistoryButtons();
       this.renderAll();
+    }
+
+    // MULTI-CANVAS LINK & SYNC ENGINE
+    getLinkedCanvases(excludeId = null) {
+      return this.canvases.filter(c => c.isLinked && c.id !== excludeId);
+    }
+
+    updateSyncButtonUI(c) {
+      if (!c || !c.syncBtn) return;
+      if (c.isLinked) {
+        c.syncBtn.classList.add('connected');
+        c.syncBtn.innerHTML = `
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          <span class="sync-label">🔗 Conectado</span>
+        `;
+        c.syncBtn.title = 'Canvas conectado! Clique para desconectar';
+        c.boardEl.classList.add('synced-board');
+      } else {
+        c.syncBtn.classList.remove('connected');
+        c.syncBtn.innerHTML = `
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          <span class="sync-label">Conectar</span>
+        `;
+        c.syncBtn.title = 'Conectar este canvas para sincronizar edições em tempo real';
+        c.boardEl.classList.remove('synced-board');
+      }
+    }
+
+    toggleCanvasLink(canvasId) {
+      const c = this.canvases.find(item => item.id === canvasId);
+      if (!c) return;
+
+      // Smart 2-canvas connection: if project has exactly 2 canvases, connecting one connects both!
+      if (this.canvases.length === 2) {
+        const other = this.canvases.find(item => item.id !== canvasId);
+        const newState = !c.isLinked;
+        c.isLinked = newState;
+        if (other) {
+          other.isLinked = newState;
+          this.updateSyncButtonUI(other);
+        }
+        this.updateSyncButtonUI(c);
+
+        if (newState) {
+          if (c.elements.length > 0 && other && other.elements.length === 0) {
+            other.bgColor = c.bgColor;
+            this.mirrorElementsFrom(c, other);
+            this.render(other.id);
+          } else if (other && other.elements.length > 0 && c.elements.length === 0) {
+            c.bgColor = other.bgColor;
+            this.mirrorElementsFrom(other, c);
+            this.render(c.id);
+          }
+          showToast(`⚡ Canvas conectados! Linha de sincronização ativada.`, 'success');
+        } else {
+          showToast('Canvas desconectados.', 'info');
+        }
+
+        this.updateConnectionLines();
+        return;
+      }
+
+      // General behavior for 3+ canvases
+      c.isLinked = !c.isLinked;
+      this.updateSyncButtonUI(c);
+
+      const linked = this.canvases.filter(item => item.isLinked);
+
+      if (c.isLinked) {
+        const sourceWithElements = this.canvases.find(item => item.id !== c.id && item.isLinked && item.elements.length > 0);
+        if (sourceWithElements && c.elements.length === 0) {
+          c.bgColor = sourceWithElements.bgColor;
+          this.mirrorElementsFrom(sourceWithElements, c);
+          this.render(c.id);
+          this.saveHistory();
+        }
+
+        if (linked.length >= 2) {
+          showToast(`${c.name} conectado! (${linked.length} canvas sincronizados)`, 'success');
+        } else {
+          showToast(`${c.name} conectado! Conecte outro canvas para exibir a linha de ligação.`, 'info');
+        }
+      } else {
+        showToast(`${c.name} desconectado.`, 'info');
+      }
+
+      this.updateConnectionLines();
+    }
+
+    mirrorElementsFrom(source, target) {
+      target.elements = source.elements.map(el => {
+        const normX = el.x / source.width;
+        const normY = el.y / source.height;
+        const scale = Math.min(target.width / source.width, target.height / source.height);
+
+        const clone = { ...el };
+        clone.id = 'el_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+        clone.syncId = el.syncId || el.id;
+        el.syncId = clone.syncId;
+
+        clone.x = Math.round(normX * target.width);
+        clone.y = Math.round(normY * target.height);
+
+        if (clone.type === 'text') {
+          clone.fontSize = Math.max(14, Math.round(el.fontSize * scale));
+        } else if (clone.type === 'image' || clone.type === 'shape') {
+          clone.width = Math.max(20, Math.round(el.width * scale));
+          clone.height = Math.max(20, Math.round(el.height * scale));
+        }
+
+        if (clone.type === 'image' && el.src) {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.src = el.src;
+          clone.img = img;
+        }
+
+        return clone;
+      });
+    }
+
+    syncElementUpdate(sourceCanvas, sourceEl) {
+      if (!sourceCanvas || !sourceCanvas.isLinked || !sourceEl || !sourceEl.syncId) return;
+
+      const linked = this.getLinkedCanvases(sourceCanvas.id);
+      if (linked.length === 0) return;
+
+      const normX = sourceEl.x / sourceCanvas.width;
+      const normY = sourceEl.y / sourceCanvas.height;
+
+      linked.forEach(target => {
+        const targetEl = target.elements.find(item => item.syncId === sourceEl.syncId);
+        if (!targetEl) return;
+
+        const props = [
+          'text', 'fontFamily', 'fontWeight', 'color', 'strokeEnabled', 'strokeColor', 'strokeWidth',
+          'shadowEnabled', 'shadowColor', 'shadowBlur', 'shadowOffsetX', 'shadowOffsetY',
+          'bgEnabled', 'bgColor', 'bgRadius', 'bgPadding',
+          'opacity', 'rotation', 'borderRadius', 'borderEnabled', 'borderColor', 'borderWidth',
+          'flipH', 'flipV'
+        ];
+
+        props.forEach(p => {
+          if (sourceEl[p] !== undefined) {
+            targetEl[p] = sourceEl[p];
+          }
+        });
+
+        targetEl.x = Math.round(normX * target.width);
+        targetEl.y = Math.round(normY * target.height);
+
+        const scale = Math.min(target.width / sourceCanvas.width, target.height / sourceCanvas.height);
+        if (sourceEl.type === 'text') {
+          targetEl.fontSize = Math.max(14, Math.round(sourceEl.fontSize * scale));
+        } else if (sourceEl.type === 'image' || sourceEl.type === 'shape') {
+          targetEl.width = Math.max(20, Math.round(sourceEl.width * scale));
+          targetEl.height = Math.max(20, Math.round(sourceEl.height * scale));
+        }
+
+        this.render(target.id);
+      });
+    }
+
+    // VISUAL CABLE & WIRE CONNECTIONS
+    clientToWorkspaceCoords(clientX, clientY) {
+      if (!canvasViewport) return { x: clientX, y: clientY };
+      const vpRect = canvasViewport.getBoundingClientRect();
+      const centerX = vpRect.left + vpRect.width / 2;
+      const centerY = vpRect.top + vpRect.height / 2;
+
+      const relX = clientX - centerX - this.panX;
+      const relY = clientY - centerY - this.panY;
+
+      return {
+        x: Math.round(relX / this.zoomLevel),
+        y: Math.round(relY / this.zoomLevel)
+      };
+    }
+
+    getCanvasAnchorPoint(c, towardsPoint = null) {
+      const b = this.getBoardBounds(c);
+      if (!towardsPoint) {
+        return { x: b.right, y: b.cy };
+      }
+
+      const dx = towardsPoint.x - b.cx;
+      const dy = towardsPoint.y - b.cy;
+
+      if (Math.abs(dx) >= Math.abs(dy)) {
+        if (dx >= 0) {
+          return { x: b.right, y: b.cy };
+        } else {
+          return { x: b.x, y: b.cy };
+        }
+      } else {
+        if (dy >= 0) {
+          return { x: b.cx, y: b.bottom };
+        } else {
+          return { x: b.cx, y: b.y };
+        }
+      }
+    }
+
+    createBezierPath(p1, p2) {
+      const dx = p2.x - p1.x;
+      const dy = p2.y - p1.y;
+      const dist = Math.hypot(dx, dy);
+      const curvature = Math.min(Math.max(dist * 0.45, 50), 220);
+
+      let cx1, cy1, cx2, cy2;
+
+      if (Math.abs(dx) >= Math.abs(dy)) {
+        const sign = dx >= 0 ? 1 : -1;
+        cx1 = p1.x + curvature * sign;
+        cy1 = p1.y;
+        cx2 = p2.x - curvature * sign;
+        cy2 = p2.y;
+      } else {
+        const sign = dy >= 0 ? 1 : -1;
+        cx1 = p1.x;
+        cy1 = p1.y + curvature * sign;
+        cx2 = p2.x;
+        cy2 = p2.y - curvature * sign;
+      }
+
+      return `M ${p1.x} ${p1.y} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${p2.x} ${p2.y}`;
+    }
+
+    updateConnectionLines(dragPoint = null) {
+      if (!this.connectionsSvg) return;
+
+      const linked = this.canvases.filter(c => c.isLinked);
+      let svgHtml = '';
+
+      // 1. Draw persistent glowing connection cables between connected canvases
+      if (linked.length >= 2) {
+        for (let i = 0; i < linked.length - 1; i++) {
+          const c1 = linked[i];
+          const c2 = linked[i + 1];
+
+          const b1 = this.getBoardBounds(c1);
+          const b2 = this.getBoardBounds(c2);
+
+          const p1 = this.getCanvasAnchorPoint(c1, { x: b2.cx, y: b2.cy });
+          const p2 = this.getCanvasAnchorPoint(c2, { x: b1.cx, y: b1.cy });
+
+          const pathD = this.createBezierPath(p1, p2);
+          const midX = Math.round((p1.x + p2.x) / 2);
+          const midY = Math.round((p1.y + p2.y) / 2);
+
+          svgHtml += `
+            <g class="connection-wire-pair" data-source-id="${c1.id}" data-target-id="${c2.id}">
+              <!-- Outer Glow Layer -->
+              <path class="connection-cable-bg" d="${pathD}" />
+              <!-- Animated Glowing Cable -->
+              <path class="connection-cable" d="${pathD}" />
+              <!-- Inner Electricity Core -->
+              <path class="connection-cable-core" d="${pathD}" />
+
+              <!-- End Terminals on Canvas Borders -->
+              <circle cx="${p1.x}" cy="${p1.y}" r="7" fill="#00f0ff" stroke="#ffffff" stroke-width="2.5" />
+              <circle cx="${p2.x}" cy="${p2.y}" r="7" fill="#00f0ff" stroke="#ffffff" stroke-width="2.5" />
+
+              <!-- Midpoint Disconnect Badge -->
+              <foreignObject x="${midX - 75}" y="${midY - 14}" width="150" height="30" class="connection-badge-group">
+                <div xmlns="http://www.w3.org/1999/xhtml" class="connection-badge-pill" data-c1="${c1.id}" data-c2="${c2.id}">
+                  <span>⚡ Sincronizado</span>
+                  <span class="disconnect-x" title="Desconectar este vínculo">✕</span>
+                </div>
+              </foreignObject>
+            </g>
+          `;
+        }
+      }
+
+      // 2. Draw interactive dragging wire if user is currently pulling a cable
+      if (this.isDraggingWire && dragPoint && this.wireSourceId) {
+        const source = this.canvases.find(c => c.id === this.wireSourceId);
+        if (source) {
+          const p1 = this.getCanvasAnchorPoint(source, dragPoint);
+          const pathD = this.createBezierPath(p1, dragPoint);
+
+          svgHtml += `
+            <g class="temp-wire-group">
+              <path class="connection-cable-bg" d="${pathD}" />
+              <path class="temp-drag-cable" d="${pathD}" />
+              <circle cx="${p1.x}" cy="${p1.y}" r="7" fill="#00f0ff" stroke="#ffffff" stroke-width="2" />
+              <circle cx="${dragPoint.x}" cy="${dragPoint.y}" r="8" fill="#00f0ff" stroke="#ffffff" stroke-width="2" />
+            </g>
+          `;
+        }
+      }
+
+      this.connectionsSvg.innerHTML = svgHtml;
+
+      // Attach click listeners to disconnect buttons on the cables
+      this.connectionsSvg.querySelectorAll('.connection-badge-pill').forEach(badge => {
+        badge.addEventListener('mousedown', (e) => e.stopPropagation());
+        badge.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const c1Id = badge.dataset.c1;
+          const c2Id = badge.dataset.c2;
+          this.disconnectPair(c1Id, c2Id);
+        });
+      });
+    }
+
+    disconnectPair(c1Id, c2Id) {
+      const c1 = this.canvases.find(c => c.id === c1Id);
+      const c2 = this.canvases.find(c => c.id === c2Id);
+      if (c1 && c2) {
+        const linked = this.canvases.filter(c => c.isLinked);
+        if (linked.length <= 2) {
+          if (c1.isLinked) this.toggleCanvasLink(c1.id);
+          if (c2.isLinked) this.toggleCanvasLink(c2.id);
+        } else {
+          this.toggleCanvasLink(c2.id);
+        }
+        showToast('Vínculo desconectado!', 'info');
+      }
+    }
+
+    startWireDrag(sourceCanvasId, e) {
+      const source = this.canvases.find(c => c.id === sourceCanvasId);
+      if (!source) return;
+
+      this.isDraggingWire = true;
+      this.wireSourceId = sourceCanvasId;
+      this.hoveredDropCanvasId = null;
+
+      if (source.connectorPin) {
+        source.connectorPin.classList.add('dragging');
+      }
+
+      const coords = this.clientToWorkspaceCoords(e.clientX, e.clientY);
+      this.updateConnectionLines(coords);
     }
 
     getBoardBounds(c) {
@@ -1402,6 +1786,8 @@ document.addEventListener('DOMContentLoaded', () => {
           c.boardEl.style.top = `${c.y}px`;
         }
       });
+
+      this.updateConnectionLines();
     }
 
     addAdjacentCanvas(sourceId, direction) {
@@ -1492,6 +1878,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       showToast('Canvas removido.', 'info');
+      this.updateConnectionLines();
     }
 
     toggleSafeZone() {
@@ -1802,10 +2189,45 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!active) return;
       const id = 'el_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
       el.id = id;
+      el.syncId = el.syncId || ('sync_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5));
       active.elements.push(el);
       active.selectedId = id;
       this.selectedId = id;
       this.elements = active.elements;
+
+      // Sync creation to linked canvases
+      if (active.isLinked) {
+        const linked = this.getLinkedCanvases(active.id);
+        linked.forEach(target => {
+          const normX = el.x / active.width;
+          const normY = el.y / active.height;
+          const scale = Math.min(target.width / active.width, target.height / active.height);
+
+          const syncedEl = { ...el };
+          syncedEl.id = 'el_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+          syncedEl.syncId = el.syncId;
+          syncedEl.x = Math.round(normX * target.width);
+          syncedEl.y = Math.round(normY * target.height);
+
+          if (syncedEl.type === 'text') {
+            syncedEl.fontSize = Math.max(14, Math.round(el.fontSize * scale));
+          } else if (syncedEl.type === 'image' || syncedEl.type === 'shape') {
+            syncedEl.width = Math.max(20, Math.round(el.width * scale));
+            syncedEl.height = Math.max(20, Math.round(el.height * scale));
+          }
+
+          if (syncedEl.type === 'image' && el.src) {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.src = el.src;
+            syncedEl.img = img;
+          }
+
+          target.elements.push(syncedEl);
+          this.render(target.id);
+        });
+      }
+
       this.saveHistory();
       this.render();
       this.updateInspector();
@@ -1821,10 +2243,22 @@ document.addEventListener('DOMContentLoaded', () => {
     deleteSelected() {
       const active = this.getActiveCanvas();
       if (!active || !active.selectedId) return;
+      const sel = this.getSelected();
+      const syncId = sel ? sel.syncId : null;
+
       active.elements = active.elements.filter(el => el.id !== active.selectedId);
       active.selectedId = null;
       this.selectedId = null;
       this.elements = active.elements;
+
+      if (active.isLinked && syncId) {
+        const linked = this.getLinkedCanvases(active.id);
+        linked.forEach(target => {
+          target.elements = target.elements.filter(el => el.syncId !== syncId);
+          this.render(target.id);
+        });
+      }
+
       this.saveHistory();
       this.render();
       this.updateInspector();
@@ -1837,12 +2271,46 @@ document.addEventListener('DOMContentLoaded', () => {
       const active = this.getActiveCanvas();
       const copy = { ...sel };
       copy.id = 'el_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+      copy.syncId = 'sync_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
       copy.x += 30;
       copy.y += 30;
       active.elements.push(copy);
       active.selectedId = copy.id;
       this.selectedId = copy.id;
       this.elements = active.elements;
+
+      if (active.isLinked) {
+        const linked = this.getLinkedCanvases(active.id);
+        linked.forEach(target => {
+          const normX = copy.x / active.width;
+          const normY = copy.y / active.height;
+          const scale = Math.min(target.width / active.width, target.height / active.height);
+
+          const syncedCopy = { ...copy };
+          syncedCopy.id = 'el_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+          syncedCopy.syncId = copy.syncId;
+          syncedCopy.x = Math.round(normX * target.width);
+          syncedCopy.y = Math.round(normY * target.height);
+
+          if (syncedCopy.type === 'text') {
+            syncedCopy.fontSize = Math.max(14, Math.round(copy.fontSize * scale));
+          } else if (syncedCopy.type === 'image' || syncedCopy.type === 'shape') {
+            syncedCopy.width = Math.max(20, Math.round(copy.width * scale));
+            syncedCopy.height = Math.max(20, Math.round(copy.height * scale));
+          }
+
+          if (syncedCopy.type === 'image' && copy.src) {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.src = copy.src;
+            syncedCopy.img = img;
+          }
+
+          target.elements.push(syncedCopy);
+          this.render(target.id);
+        });
+      }
+
       this.saveHistory();
       this.render();
       this.updateInspector();
@@ -1856,6 +2324,19 @@ document.addEventListener('DOMContentLoaded', () => {
       if (index !== -1 && index < active.elements.length - 1) {
         const item = active.elements.splice(index, 1)[0];
         active.elements.splice(index + 1, 0, item);
+
+        if (active.isLinked && item.syncId) {
+          const linked = this.getLinkedCanvases(active.id);
+          linked.forEach(target => {
+            const tIdx = target.elements.findIndex(el => el.syncId === item.syncId);
+            if (tIdx !== -1 && tIdx < target.elements.length - 1) {
+              const tItem = target.elements.splice(tIdx, 1)[0];
+              target.elements.splice(tIdx + 1, 0, tItem);
+              this.render(target.id);
+            }
+          });
+        }
+
         this.saveHistory();
         this.render();
         this.renderLayers();
@@ -1869,6 +2350,19 @@ document.addEventListener('DOMContentLoaded', () => {
       if (index > 0) {
         const item = active.elements.splice(index, 1)[0];
         active.elements.splice(index - 1, 0, item);
+
+        if (active.isLinked && item.syncId) {
+          const linked = this.getLinkedCanvases(active.id);
+          linked.forEach(target => {
+            const tIdx = target.elements.findIndex(el => el.syncId === item.syncId);
+            if (tIdx > 0) {
+              const tItem = target.elements.splice(tIdx, 1)[0];
+              target.elements.splice(tIdx - 1, 0, tItem);
+              this.render(target.id);
+            }
+          });
+        }
+
         this.saveHistory();
         this.render();
         this.renderLayers();
@@ -1880,6 +2374,16 @@ document.addEventListener('DOMContentLoaded', () => {
       const targetId = canvasId || this.activeCanvasId;
       const c = this.canvases.find(item => item.id === targetId);
       if (!c) return;
+
+      // Realtime synchronization to linked canvases when active canvas element is modified
+      if (!this._isSyncing && c.id === this.activeCanvasId && c.isLinked && c.selectedId) {
+        const sel = c.elements.find(el => el.id === c.selectedId);
+        if (sel && sel.syncId) {
+          this._isSyncing = true;
+          this.syncElementUpdate(c, sel);
+          this._isSyncing = false;
+        }
+      }
 
       const targetCtx = c.ctx;
       targetCtx.clearRect(0, 0, c.width, c.height);
@@ -1925,6 +2429,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     renderAll() {
       this.canvases.forEach(c => this.render(c.id));
+      this.updateConnectionLines();
     }
     renderTextElement(el) {
       ctx.font = `${el.fontWeight || '900'} ${el.fontSize}px ${el.fontFamily}`;
@@ -2179,6 +2684,34 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       window.addEventListener('mousemove', (e) => {
+        if (this.isDraggingWire) {
+          const coords = this.clientToWorkspaceCoords(e.clientX, e.clientY);
+
+          // Check if hovering over another canvas
+          let hovered = null;
+          for (let i = 0; i < this.canvases.length; i++) {
+            const c = this.canvases[i];
+            if (c.id === this.wireSourceId) continue;
+            const b = this.getBoardBounds(c);
+            if (coords.x >= b.x && coords.x <= b.right && coords.y >= b.y && coords.y <= b.bottom) {
+              hovered = c;
+              break;
+            }
+          }
+
+          this.canvases.forEach(c => {
+            if (hovered && c.id === hovered.id) {
+              c.boardEl.classList.add('drop-target-ready');
+            } else {
+              c.boardEl.classList.remove('drop-target-ready');
+            }
+          });
+
+          this.hoveredDropCanvasId = hovered ? hovered.id : null;
+          this.updateConnectionLines(coords);
+          return;
+        }
+
         if (this.isPanning) {
           this.panX = e.clientX - this.panStartX;
           this.panY = e.clientY - this.panStartY;
@@ -2189,6 +2722,33 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       window.addEventListener('mouseup', () => {
+        if (this.isDraggingWire) {
+          const sourceId = this.wireSourceId;
+          const targetId = this.hoveredDropCanvasId;
+
+          this.isDraggingWire = false;
+          this.wireSourceId = null;
+          this.hoveredDropCanvasId = null;
+
+          this.canvases.forEach(c => {
+            c.boardEl.classList.remove('drop-target-ready');
+            if (c.connectorPin) c.connectorPin.classList.remove('dragging');
+          });
+
+          if (sourceId && targetId && sourceId !== targetId) {
+            const source = this.canvases.find(c => c.id === sourceId);
+            const target = this.canvases.find(c => c.id === targetId);
+            if (source && target) {
+              if (!source.isLinked) this.toggleCanvasLink(source.id);
+              if (!target.isLinked) this.toggleCanvasLink(target.id);
+              showToast(`⚡ ${source.name} conectado a ${target.name}!`, 'success');
+            }
+          }
+
+          this.updateConnectionLines();
+          return;
+        }
+
         if (this.isPanning) {
           this.isPanning = false;
           if (canvasViewport) {
@@ -2643,6 +3203,52 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
+    reorderElement(draggedId, targetId, insertAboveInUI = false) {
+      const active = this.getActiveCanvas();
+      if (!active || draggedId === targetId) return;
+
+      const draggedIndex = active.elements.findIndex(el => el.id === draggedId);
+      const targetIndex = active.elements.findIndex(el => el.id === targetId);
+      if (draggedIndex === -1 || targetIndex === -1) return;
+
+      // Extract dragged element
+      const [draggedEl] = active.elements.splice(draggedIndex, 1);
+
+      // In the elements array, index 0 is bottom layer, last index is top layer.
+      // In UI, top row is top layer, bottom row is bottom layer.
+      // So insertAboveInUI means placing after the target in active.elements (higher z-index).
+      // insertBelowInUI means placing before the target in active.elements (lower z-index).
+      let newTargetIndex = active.elements.findIndex(el => el.id === targetId);
+      if (insertAboveInUI) {
+        newTargetIndex += 1;
+      }
+      active.elements.splice(newTargetIndex, 0, draggedEl);
+
+      // Select the moved element
+      active.selectedId = draggedEl.id;
+      this.selectedId = draggedEl.id;
+
+      // Sync layer order to linked canvases
+      if (active.isLinked && draggedEl.syncId) {
+        const orderMap = active.elements.map(el => el.syncId).filter(Boolean);
+        const linked = this.getLinkedCanvases(active.id);
+        linked.forEach(target => {
+          target.elements.sort((a, b) => {
+            const idxA = orderMap.indexOf(a.syncId);
+            const idxB = orderMap.indexOf(b.syncId);
+            if (idxA === -1 || idxB === -1) return 0;
+            return idxA - idxB;
+          });
+          this.render(target.id);
+        });
+      }
+
+      this.saveHistory();
+      this.render();
+      this.updateInspector();
+      this.renderLayers();
+    }
+
     renderLayers() {
       const active = this.getActiveCanvas();
       const elements = active ? active.elements : this.elements;
@@ -2658,6 +3264,8 @@ document.addEventListener('DOMContentLoaded', () => {
       [...elements].reverse().forEach((el) => {
         const item = document.createElement('div');
         item.className = `layer-item ${el.id === selectedId ? 'active' : ''}`;
+        item.draggable = true;
+        item.dataset.layerId = el.id;
 
         let icon = '📝';
         let label = el.text ? el.text.slice(0, 16) : 'Texto';
@@ -2670,6 +3278,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         item.innerHTML = `
+          <span class="layer-drag-handle" title="Arrastar para reordenar camada">
+            <svg width="10" height="14" viewBox="0 0 10 16" fill="currentColor">
+              <circle cx="2.5" cy="2.5" r="1.5"/>
+              <circle cx="7.5" cy="2.5" r="1.5"/>
+              <circle cx="2.5" cy="8" r="1.5"/>
+              <circle cx="7.5" cy="8" r="1.5"/>
+              <circle cx="2.5" cy="13.5" r="1.5"/>
+              <circle cx="7.5" cy="13.5" r="1.5"/>
+            </svg>
+          </span>
           <span class="layer-icon">${icon}</span>
           <span style="flex: 1; margin-left: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(label)}</span>
         `;
@@ -2682,12 +3300,58 @@ document.addEventListener('DOMContentLoaded', () => {
           this.renderLayers();
         });
 
+        // DRAG AND DROP REORDERING
+        item.addEventListener('dragstart', (e) => {
+          item.classList.add('dragging');
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', el.id);
+          this._draggedLayerId = el.id;
+        });
+
+        item.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+
+          if (this._draggedLayerId && this._draggedLayerId !== el.id) {
+            const rect = item.getBoundingClientRect();
+            const isTopHalf = (e.clientY - rect.top) < (rect.height / 2);
+
+            item.classList.toggle('drag-over-top', isTopHalf);
+            item.classList.toggle('drag-over-bottom', !isTopHalf);
+          }
+        });
+
+        item.addEventListener('dragleave', () => {
+          item.classList.remove('drag-over-top', 'drag-over-bottom');
+        });
+
+        item.addEventListener('drop', (e) => {
+          e.preventDefault();
+          item.classList.remove('drag-over-top', 'drag-over-bottom');
+
+          const draggedId = e.dataTransfer.getData('text/plain') || this._draggedLayerId;
+          if (draggedId && draggedId !== el.id) {
+            const rect = item.getBoundingClientRect();
+            const isTopHalf = (e.clientY - rect.top) < (rect.height / 2);
+            this.reorderElement(draggedId, el.id, isTopHalf);
+          }
+        });
+
+        item.addEventListener('dragend', () => {
+          item.classList.remove('dragging');
+          layersContainer.querySelectorAll('.layer-item').forEach(i => {
+            i.classList.remove('drag-over-top', 'drag-over-bottom');
+          });
+          this._draggedLayerId = null;
+        });
+
         layersContainer.appendChild(item);
       });
     }
   }
 
   const canvasEngine = new CanvasEngine();
+  window.canvasEngine = canvasEngine;
 
   // Safe zone guide toggle
   toggleSafeZoneBtn.addEventListener('click', () => {
@@ -2798,7 +3462,15 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.addEventListener('click', () => {
       const color = btn.getAttribute('data-color');
       const active = canvasEngine.getActiveCanvas();
-      if (active) active.bgColor = color;
+      if (active) {
+        active.bgColor = color;
+        if (active.isLinked) {
+          canvasEngine.getLinkedCanvases(active.id).forEach(target => {
+            target.bgColor = color;
+            canvasEngine.render(target.id);
+          });
+        }
+      }
       canvasEngine.bgColor = color;
       canvasBgColorInput.value = color;
       canvasEngine.saveHistory();
@@ -2808,7 +3480,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   canvasBgColorInput.addEventListener('input', (e) => {
     const active = canvasEngine.getActiveCanvas();
-    if (active) active.bgColor = e.target.value;
+    if (active) {
+      active.bgColor = e.target.value;
+      if (active.isLinked) {
+        canvasEngine.getLinkedCanvases(active.id).forEach(target => {
+          target.bgColor = e.target.value;
+          canvasEngine.render(target.id);
+        });
+      }
+    }
     canvasEngine.bgColor = e.target.value;
     canvasEngine.render();
   });
