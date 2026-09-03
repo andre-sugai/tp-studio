@@ -1,0 +1,15 @@
+{
+  "name": "tp-studio",
+  "version": "1.12.2",
+  "description": "Canivete TP - Web Dashboard & Estúdio de Thumbnails",
+  "scripts": {
+    "start": "npx serve ."
+  },
+  "keywords": [
+    "youtube",
+    "thumbnail",
+    "dashboard"
+  ],
+  "author": "",
+  "license": "MIT"
+}

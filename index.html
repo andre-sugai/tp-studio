@@ -15,23 +15,34 @@
   <div class="app-layout">
     
     <!-- Sidebar Navigation -->
-    <aside class="sidebar">
-      <div class="brand">
-        <img src="icons/icon-48.png" alt="Canivete TP" width="36" height="36">
-        <div class="brand-text">
-          <h2>Canivete TP</h2>
-          <span class="badge">Dashboard v1.7.0</span>
+    <aside class="sidebar" id="sidebar">
+      <div class="brand" id="sidebarBrand">
+        <div class="brand-left">
+          <img src="icons/icon-48.png" alt="Canivete TP" width="36" height="36">
+          <div class="brand-text">
+            <h2>Canivete TP</h2>
+            <span class="badge">Dashboard v1.12.2</span>
+          </div>
         </div>
+        <button id="sidebarToggleBtn" class="sidebar-toggle-btn" title="Recolher barra lateral" aria-label="Recolher barra lateral">
+          <svg class="toggle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
       </div>
 
       <nav class="nav-menu">
-        <button class="nav-item active" data-tab="templatesTab">
+        <button class="nav-item active" data-tab="templatesTab" title="Templates de Texto">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-          <span>Templates de Texto</span>
+          <span class="nav-label">Templates de Texto</span>
         </button>
-        <button class="nav-item" data-tab="thumbnailsTab">
+        <button class="nav-item" data-tab="thumbnailsTab" title="Criador de Thumbnails">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>
-          <span>Criador de Thumbnails</span>
+          <span class="nav-label">Criador de Thumbnails</span>
+        </button>
+        <button class="nav-item" data-tab="linksTab" title="Acesso Rápido">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+          <span class="nav-label">Acesso Rápido</span>
         </button>
       </nav>
 
@@ -100,24 +111,6 @@
         
         <!-- Top Toolbar -->
         <div class="editor-top-bar">
-          <div class="preset-selector-group">
-            <label for="canvasPresetSelect">Tamanho:</label>
-            <select id="canvasPresetSelect" class="form-select">
-              <option value="1280x720" selected>YouTube Thumbnail (1280 × 720 - 16:9)</option>
-              <option value="1920x1080">Full HD (1920 × 1080 - 16:9)</option>
-              <option value="1080x1080">Post Quadrado / Comunidade (1080 × 1080 - 1:1)</option>
-              <option value="1080x1920">Shorts / Reels / Stories (1080 × 1920 - 9:16)</option>
-              <option value="2560x1440">YouTube Banner / Capa (2560 × 1440)</option>
-              <option value="custom">Personalizado...</option>
-            </select>
-            <div id="customDimensionsGroup" class="custom-dims-group hidden">
-              <input type="number" id="customWidthInput" value="1280" min="100" max="4000" placeholder="L">
-              <span>×</span>
-              <input type="number" id="customHeightInput" value="720" min="100" max="4000" placeholder="A">
-              <button id="applyCustomDimBtn" class="btn btn-xs btn-secondary">OK</button>
-            </div>
-          </div>
-
           <div class="top-bar-actions">
             <!-- Safe Zone Guide Toggle -->
             <button id="toggleSafeZoneBtn" class="btn btn-secondary btn-icon-toggle active" title="Mostrar/Ocultar Guia do Selo de Tempo do YouTube (canto inferior direito)">
@@ -138,6 +131,12 @@
             <button id="clearCanvasBtn" class="btn btn-secondary btn-danger-hover" title="Limpar tudo">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
               <span>Limpar</span>
+            </button>
+
+            <!-- Shortcuts button -->
+            <button id="shortcutsModalBtn" class="btn btn-secondary" title="Ver Atalhos de Teclado e Gestos (?)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.001"/><path d="M10 8h.001"/><path d="M14 8h.001"/><path d="M18 8h.001"/><path d="M8 12h.001"/><path d="M12 12h.001"/><path d="M16 12h.001"/><path d="M7 16h10"/></svg>
+              <span>Atalhos (?)</span>
             </button>
 
             <!-- Export buttons -->
@@ -179,6 +178,11 @@
               <span>Forma / Tarja</span>
             </button>
 
+            <button id="toolPanCanvas" class="tool-btn" title="Mover Tela / Pan (Atalho: H ou segure Espaço e arraste)">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/><path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>
+              <span>Mover Tela</span>
+            </button>
+
             <div class="tool-divider"></div>
 
             <div class="tool-section-title">Fundo</div>
@@ -209,18 +213,39 @@
 
           <!-- Center Canvas Stage Viewport -->
           <div class="canvas-viewport" id="canvasViewport">
-            <div class="canvas-container" id="canvasContainer">
-              <canvas id="mainCanvas" width="1280" height="720"></canvas>
-              
-              <!-- Safe zone overlay container -->
-              <div id="safeZoneOverlay" class="safe-zone-overlay">
-                <div class="yt-time-badge-mock">00:00</div>
-              </div>
+
+            <!-- Canvas Workspace: holds all canvas artboards in 2D space -->
+            <div class="canvas-workspace" id="canvasWorkspace">
+              <!-- Canvas artboards generated dynamically by CanvasEngine -->
             </div>
             
             <!-- Paste Instruction Banner -->
             <div class="paste-banner">
-              <span>📋 Dica: Pressione <strong>Ctrl + V</strong> (ou <strong>Cmd + V</strong>) a qualquer momento para colar imagens direto aqui.</span>
+              <span>📋 Dica: Pressione <strong>Ctrl + V</strong> (ou <strong>Cmd + V</strong>) para colar imagens. Use os botões <strong>+</strong> nas bordas para criar novos canvas.</span>
+            </div>
+
+            <!-- Floating Zoom Controls -->
+            <div class="canvas-zoom-controls">
+              <button id="panModeToggleBtn" class="zoom-btn" title="Modo Mover Tela / Pan (H ou segure Espaço)">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/><path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>
+              </button>
+              <div class="zoom-divider"></div>
+              <button id="zoomOutBtn" class="zoom-btn" title="Diminuir Zoom (Scroll para baixo ou Ctrl -)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </button>
+              <button id="zoomResetBtn" class="zoom-level-btn" title="Clique para redefinir zoom (100%)">
+                <span id="zoomLevelDisplay">100%</span>
+              </button>
+              <button id="zoomInBtn" class="zoom-btn" title="Aumentar Zoom (Scroll para cima ou Ctrl +)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </button>
+              <button id="zoomFitBtn" class="zoom-btn zoom-fit-btn" title="Ajustar e Centralizar (Ctrl 0)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+              </button>
+              <div class="zoom-divider"></div>
+              <button id="floatingShortcutsBtn" class="zoom-btn" title="Ver Atalhos de Teclado e Gestos (?)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              </button>
             </div>
           </div>
 
@@ -497,6 +522,54 @@
 
         </div>
       </section>
+      
+      <!-- ============================================== -->
+      <!-- TAB 3: ACESSO RÁPIDO (SITES & FERRAMENTAS)    -->
+      <!-- ============================================== -->
+      <section id="linksTab" class="tab-pane">
+        <header class="tab-header">
+          <div>
+            <h1>Acesso Rápido</h1>
+            <p class="subtitle">Guarde seus sites, ferramentas e canais favoritos para abrir com 1 clique.</p>
+          </div>
+          <div class="header-actions">
+            <button id="importLinksBtn" class="btn btn-secondary" title="Restaurar sites de arquivo JSON">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <span>Importar</span>
+            </button>
+            <input type="file" id="importLinksFileInput" accept=".json" style="display: none;">
+            <button id="exportLinksBtn" class="btn btn-secondary" title="Fazer backup dos sites">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <span>Exportar</span>
+            </button>
+            <button id="newLinkBtn" class="btn btn-primary">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <span>Novo Site</span>
+            </button>
+          </div>
+        </header>
+
+        <!-- Filters & Search -->
+        <div class="filter-bar">
+          <div class="search-box">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="linkSearchInput" placeholder="Buscar por título, endereço ou categoria...">
+          </div>
+          <div class="category-pills" id="linkCategoryPills">
+            <button class="pill active" data-category="all">Todos</button>
+            <button class="pill" data-category="YouTube">YouTube</button>
+            <button class="pill" data-category="Ferramentas">Ferramentas</button>
+            <button class="pill" data-category="IA">IA</button>
+            <button class="pill" data-category="Design">Design</button>
+            <button class="pill" data-category="Geral">Geral</button>
+          </div>
+        </div>
+
+        <!-- Links Grid -->
+        <div class="links-grid" id="linksGrid">
+          <!-- Injected dynamically via JS -->
+        </div>
+      </section>
 
     </main>
   </div>
@@ -547,6 +620,183 @@
           <button type="submit" class="btn btn-primary">Salvar Template</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: ADICIONAR / EDITAR SITE (ACESSO RÁPIDO) -->
+  <!-- ============================================== -->
+  <div id="linkModal" class="modal-backdrop hidden">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h2 id="linkModalTitle">Adicionar Novo Site</h2>
+        <button id="closeLinkModalBtn" class="close-btn">&times;</button>
+      </div>
+      <form id="linkForm" class="modal-body">
+        <input type="hidden" id="linkIdInput">
+        
+        <div class="form-group">
+          <label for="linkUrlInput">Endereço do Site (URL) <span class="required">*</span></label>
+          <input type="text" id="linkUrlInput" placeholder="Ex: https://studio.youtube.com ou canva.com" required autocomplete="off">
+        </div>
+
+        <div class="form-group">
+          <label for="linkTitleInput">Título / Nome do Site <span class="required">*</span></label>
+          <input type="text" id="linkTitleInput" placeholder="Ex: YouTube Studio, Canva, ChatGPT..." required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="linkCategoryInput">Categoria</label>
+            <input type="text" id="linkCategoryInput" list="linkCategoryOptions" placeholder="Ex: YouTube, Ferramentas, IA..." value="Ferramentas">
+            <datalist id="linkCategoryOptions">
+              <option value="YouTube">
+              <option value="Ferramentas">
+              <option value="IA">
+              <option value="Design">
+              <option value="Afiliados">
+              <option value="Geral">
+            </datalist>
+          </div>
+          <div class="form-group">
+            <label for="linkDescInput">Descrição ou Nota (opcional)</label>
+            <input type="text" id="linkDescInput" placeholder="Ex: Painel do canal, remoção de fundo...">
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" id="cancelLinkBtn" class="btn btn-secondary">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar Site</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: ATALHOS DO TECLADO E CONTROLES          -->
+  <!-- ============================================== -->
+  <div id="shortcutsModal" class="modal-backdrop hidden">
+    <div class="modal-dialog modal-dialog-lg shortcuts-dialog">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-title-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.001"/><path d="M10 8h.001"/><path d="M14 8h.001"/><path d="M18 8h.001"/><path d="M8 12h.001"/><path d="M12 12h.001"/><path d="M16 12h.001"/><path d="M7 16h10"/></svg>
+          </div>
+          <div>
+            <h2>Atalhos do Teclado e Navegação</h2>
+            <p class="modal-subtitle">Controles rápidos para acelerar a criação de thumbnails</p>
+          </div>
+        </div>
+        <button id="closeShortcutsModalBtn" class="close-btn" title="Fechar">&times;</button>
+      </div>
+      <div class="modal-body shortcuts-modal-body">
+        
+        <div class="shortcuts-grid">
+          <!-- Coluna 1: Zoom & Navegação na Prancheta -->
+          <div class="shortcut-group">
+            <div class="shortcut-group-header">
+              <span class="shortcut-group-icon">🔍</span>
+              <h3>Zoom e Posicionamento</h3>
+            </div>
+            
+            <div class="shortcut-item">
+              <span class="shortcut-desc">Zoom In / Zoom Out</span>
+              <div class="shortcut-keys"><kbd>Scroll do Mouse</kbd></div>
+            </div>
+
+            <div class="shortcut-item">
+              <span class="shortcut-desc">Aproximar Zoom</span>
+              <div class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>+</kbd></div>
+            </div>
+
+            <div class="shortcut-item">
+              <span class="shortcut-desc">Afastar Zoom</span>
+              <div class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>-</kbd></div>
+            </div>
+
+            <div class="shortcut-item">
+              <span class="shortcut-desc">Redefinir Zoom (100%)</span>
+              <div class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>0</kbd></div>
+            </div>
+
+            <div class="shortcut-item">
+              <span class="shortcut-desc">Mover Tela temporário (Pan)</span>
+              <div class="shortcut-keys"><kbd>Espaço</kbd> + <kbd>Arrastar</kbd></div>
+            </div>
+
+            <div class="shortcut-item">
+              <span class="shortcut-desc">Mover pelo fundo / vazio</span>
+              <div class="shortcut-keys"><kbd>Clique</kbd> + <kbd>Arrastar</kbd></div>
+            </div>
+
+            <div class="shortcut-item">
+              <span class="shortcut-desc">Modo Mover Tela (Mão)</span>
+              <div class="shortcut-keys"><kbd>H</kbd></div>
+            </div>
+
+            <div class="shortcut-item">
+              <span class="shortcut-desc">Modo Seleção / Cancelar</span>
+              <div class="shortcut-keys"><kbd>V</kbd> ou <kbd>Esc</kbd></div>
+            </div>
+          </div>
+
+          <!-- Coluna 2: Edição & Camadas -->
+          <div class="shortcut-group">
+            <div class="shortcut-group-header">
+              <span class="shortcut-group-icon">✂️</span>
+              <h3>Edição e Camadas</h3>
+            </div>
+
+            <div class="shortcut-item">
+              <span class="shortcut-desc">Colar Imagem direta</span>
+              <div class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>V</kbd></div>
+            </div>
+
+            <div class="shortcut-item">
+              <span class="shortcut-desc">Duplicar Selecionado</span>
+              <div class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>D</kbd></div>
+            </div>
+
+            <div class="shortcut-item">
+              <span class="shortcut-desc">Excluir Selecionado</span>
+              <div class="shortcut-keys"><kbd>Del</kbd> ou <kbd>Backspace</kbd></div>
+            </div>
+
+            <div class="shortcut-item">
+              <span class="shortcut-desc">Desfazer Ação</span>
+              <div class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>Z</kbd></div>
+            </div>
+
+            <div class="shortcut-item">
+              <span class="shortcut-desc">Refazer Ação</span>
+              <div class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>Y</kbd></div>
+            </div>
+
+            <div class="shortcut-item">
+              <span class="shortcut-desc">Mover elemento (precisão 1px)</span>
+              <div class="shortcut-keys"><kbd>Setas ↑ ↓ ← →</kbd></div>
+            </div>
+
+            <div class="shortcut-item">
+              <span class="shortcut-desc">Mover rápido (10px)</span>
+              <div class="shortcut-keys"><kbd>Shift</kbd> + <kbd>Setas</kbd></div>
+            </div>
+
+            <div class="shortcut-item">
+              <span class="shortcut-desc">Recolher / Expandir Menu</span>
+              <div class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>B</kbd></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="shortcuts-note">
+          <span>💡 <strong>Dica no Mac:</strong> Você pode utilizar a tecla <kbd>Cmd ⌘</kbd> no lugar de <kbd>Ctrl</kbd> para todos os atalhos. Pressione <kbd>?</kbd> para abrir esta janela a qualquer momento.</span>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="dismissShortcutsBtn" class="btn btn-primary">Entendi, Fechar</button>
+      </div>
     </div>
   </div>
 

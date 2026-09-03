@@ -53,6 +53,73 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // =========================================================================
+  // SIDEBAR COLLAPSE / EXPAND TOGGLE
+  // =========================================================================
+  const sidebar = document.getElementById('sidebar');
+  const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
+  const sidebarBrand = document.getElementById('sidebarBrand');
+  const SIDEBAR_STORAGE_KEY = 'tp_sidebar_collapsed';
+
+  // Restore saved state from localStorage
+  const isSidebarCollapsed = localStorage.getItem(SIDEBAR_STORAGE_KEY) === 'true';
+  if (isSidebarCollapsed && sidebar) {
+    sidebar.classList.add('collapsed');
+    if (sidebarToggleBtn) {
+      sidebarToggleBtn.setAttribute('title', 'Expandir barra lateral (Ctrl+B)');
+      sidebarToggleBtn.setAttribute('aria-label', 'Expandir barra lateral (Ctrl+B)');
+    }
+  }
+
+  function toggleSidebar() {
+    if (!sidebar) return;
+    const collapsed = sidebar.classList.toggle('collapsed');
+    localStorage.setItem(SIDEBAR_STORAGE_KEY, collapsed ? 'true' : 'false');
+    
+    if (sidebarToggleBtn) {
+      const label = collapsed ? 'Expandir barra lateral (Ctrl+B)' : 'Recolher barra lateral (Ctrl+B)';
+      sidebarToggleBtn.setAttribute('title', label);
+      sidebarToggleBtn.setAttribute('aria-label', label);
+    }
+  }
+
+  if (sidebarToggleBtn) {
+    sidebarToggleBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleSidebar();
+    });
+  }
+
+  // Clicking header while collapsed expands sidebar
+  if (sidebarBrand) {
+    sidebarBrand.addEventListener('click', (e) => {
+      if (sidebar && sidebar.classList.contains('collapsed') && e.target !== sidebarToggleBtn && !sidebarToggleBtn?.contains(e.target)) {
+        toggleSidebar();
+      }
+    });
+  }
+
+  // Keyboard shortcut Ctrl+B or Cmd+B to toggle sidebar
+  window.addEventListener('keydown', (e) => {
+    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return;
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'b' || e.key === 'B')) {
+      e.preventDefault();
+      toggleSidebar();
+    }
+  });
+
+  // Notify components on transition end
+  if (sidebar) {
+    sidebar.addEventListener('transitionend', (e) => {
+      if (e.propertyName === 'width') {
+        window.dispatchEvent(new Event('resize'));
+        if (typeof canvasEngine !== 'undefined' && canvasEngine && canvasEngine.render) {
+          canvasEngine.render();
+        }
+      }
+    });
+  }
+
+  // =========================================================================
   // MODULE 1: TEXT TEMPLATES MANAGER
   // =========================================================================
   const TEMPLATES_STORAGE_KEY = 'tp_text_templates';
@@ -442,26 +509,445 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initialize Templates
   loadTemplates();
 
+  // =========================================================================
+  // MODULE 1.5: QUICK LINKS MANAGER (SITES DE ACESSO RÁPIDO)
+  // =========================================================================
+  const LINKS_STORAGE_KEY = 'tp_quick_links';
+
+  const defaultQuickLinks = [
+    {
+      id: 'link_yt_studio',
+      title: 'YouTube Studio',
+      url: 'https://studio.youtube.com',
+      category: 'YouTube',
+      description: 'Painel de controle, estatísticas e gerenciamento do canal',
+      updatedAt: new Date().toISOString()
+    },
+    {
+      id: 'link_canva',
+      title: 'Canva',
+      url: 'https://www.canva.com',
+      category: 'Design',
+      description: 'Criação de banners, elementos e designs rápidos',
+      updatedAt: new Date().toISOString()
+    },
+    {
+      id: 'link_chatgpt',
+      title: 'ChatGPT',
+      url: 'https://chatgpt.com',
+      category: 'IA',
+      description: 'Roteiros, títulos virais e ideias de conteúdo',
+      updatedAt: new Date().toISOString()
+    },
+    {
+      id: 'link_removebg',
+      title: 'Remove.bg',
+      url: 'https://www.remove.bg',
+      category: 'Ferramentas',
+      description: 'Removedor automático de fundo de fotos para thumbnails',
+      updatedAt: new Date().toISOString()
+    }
+  ];
+
+  let quickLinks = [];
+  let currentLinkCategory = 'all';
+  let linkSearchQuery = '';
+
+  // DOM Elements
+  const linksGrid = document.getElementById('linksGrid');
+  const linkSearchInput = document.getElementById('linkSearchInput');
+  const linkCategoryPills = document.getElementById('linkCategoryPills');
+  const newLinkBtn = document.getElementById('newLinkBtn');
+  const exportLinksBtn = document.getElementById('exportLinksBtn');
+  const importLinksBtn = document.getElementById('importLinksBtn');
+  const importLinksFileInput = document.getElementById('importLinksFileInput');
+
+  // Modal Elements
+  const linkModal = document.getElementById('linkModal');
+  const linkModalTitle = document.getElementById('linkModalTitle');
+  const closeLinkModalBtn = document.getElementById('closeLinkModalBtn');
+  const cancelLinkBtn = document.getElementById('cancelLinkBtn');
+  const linkForm = document.getElementById('linkForm');
+  const linkIdInput = document.getElementById('linkIdInput');
+  const linkUrlInput = document.getElementById('linkUrlInput');
+  const linkTitleInput = document.getElementById('linkTitleInput');
+  const linkCategoryInput = document.getElementById('linkCategoryInput');
+  const linkDescInput = document.getElementById('linkDescInput');
+
+  // Helper: Normalize URL
+  function normalizeUrl(url) {
+    let clean = (url || '').trim();
+    if (!clean) return '';
+    if (!/^https?:\/\//i.test(clean)) {
+      clean = 'https://' + clean;
+    }
+    return clean;
+  }
+
+  // Helper: Extract domain
+  function extractDomain(url) {
+    try {
+      const parsed = new URL(normalizeUrl(url));
+      return parsed.hostname.replace(/^www\./, '');
+    } catch (e) {
+      return url || '';
+    }
+  }
+
+  // Helper: Get Favicon URL
+  function getFaviconUrl(url) {
+    const domain = extractDomain(url);
+    if (!domain) return '';
+    return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=64`;
+  }
+
+  // Helper: Auto-suggest title from URL
+  function suggestTitleFromUrl(url) {
+    const domain = extractDomain(url);
+    if (!domain) return '';
+    const parts = domain.split('.');
+    const name = parts.length > 2 ? parts[parts.length - 2] : parts[0];
+    return name.charAt(0).toUpperCase() + name.slice(1);
+  }
+
+  // Load Links from localStorage
+  function loadQuickLinks() {
+    try {
+      const localData = localStorage.getItem(LINKS_STORAGE_KEY);
+      if (localData) {
+        quickLinks = JSON.parse(localData);
+      } else {
+        quickLinks = [...defaultQuickLinks];
+        saveQuickLinks();
+      }
+    } catch (e) {
+      console.error('Erro ao carregar links:', e);
+      quickLinks = [...defaultQuickLinks];
+    }
+    renderQuickLinks();
+  }
+
+  // Save Links to localStorage
+  function saveQuickLinks() {
+    try {
+      localStorage.setItem(LINKS_STORAGE_KEY, JSON.stringify(quickLinks));
+    } catch (e) {
+      console.error('Erro ao salvar links:', e);
+    }
+  }
+
+  // Render Quick Links
+  function renderQuickLinks() {
+    if (!linksGrid) return;
+    linksGrid.innerHTML = '';
+
+    const filtered = quickLinks.filter(item => {
+      const matchesCategory = currentLinkCategory === 'all' ||
+        (item.category && item.category.toLowerCase() === currentLinkCategory.toLowerCase());
+
+      const query = linkSearchQuery.toLowerCase().trim();
+      const matchesSearch = !query ||
+        item.title.toLowerCase().includes(query) ||
+        item.url.toLowerCase().includes(query) ||
+        (item.description && item.description.toLowerCase().includes(query)) ||
+        (item.category && item.category.toLowerCase().includes(query));
+
+      return matchesCategory && matchesSearch;
+    });
+
+    if (filtered.length === 0) {
+      linksGrid.innerHTML = `
+        <div style="grid-column: 1 / -1; text-align: center; padding: 50px 20px; color: var(--text-dim);">
+          <p style="font-size: 1.1rem; font-weight: 600; margin-bottom: 6px;">Nenhum site encontrado</p>
+          <p style="font-size: 0.85rem;">Tente ajustar sua busca ou adicione um novo site clicando no botão acima.</p>
+        </div>
+      `;
+      return;
+    }
+
+    filtered.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'link-card';
+
+      const domain = extractDomain(item.url);
+      const faviconUrl = getFaviconUrl(item.url);
+
+      const descHtml = item.description
+        ? `<div class="link-card-desc" title="${escapeHtml(item.description)}">${escapeHtml(item.description)}</div>`
+        : `<div class="link-card-desc" style="color: transparent;">-</div>`;
+
+      card.innerHTML = `
+        <div>
+          <div class="link-card-header">
+            <div class="link-card-info">
+              <div class="link-favicon-wrapper">
+                <img src="${faviconUrl}" alt="${escapeHtml(item.title)}" class="link-favicon" onerror="this.src='icons/icon-32.png'; this.onerror=null;">
+              </div>
+              <div class="link-card-meta">
+                <h3 class="link-card-title" title="${escapeHtml(item.title)}">${escapeHtml(item.title)}</h3>
+                <span class="link-card-badge">${escapeHtml(item.category || 'Geral')}</span>
+              </div>
+            </div>
+            <div class="link-card-actions">
+              <button class="btn btn-secondary btn-xs btn-edit-link" title="Editar Site" data-id="${item.id}">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+              </button>
+              <button class="btn btn-secondary btn-xs btn-delete-link btn-danger-hover" title="Excluir Site" data-id="${item.id}">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="link-card-url-row" style="margin-top: 10px;" title="${escapeHtml(item.url)}">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            <span>${escapeHtml(domain)}</span>
+          </div>
+
+          <div style="margin-top: 8px;">
+            ${descHtml}
+          </div>
+        </div>
+
+        <div class="link-card-footer">
+          <a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer" class="link-open-btn">
+            <span>Abrir Site</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          </a>
+          <button class="link-copy-btn" title="Copiar Endereço" data-url="${escapeHtml(item.url)}">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          </button>
+        </div>
+      `;
+
+      // Copy link listener
+      const copyBtn = card.querySelector('.link-copy-btn');
+      if (copyBtn) {
+        copyBtn.addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(item.url);
+            showToast('Link copiado para a Área de Transferência!', 'success');
+          } catch (e) {
+            showToast('Erro ao copiar link.', 'error');
+          }
+        });
+      }
+
+      // Edit listener
+      const editBtn = card.querySelector('.btn-edit-link');
+      if (editBtn) {
+        editBtn.addEventListener('click', () => {
+          openEditLinkModal(item.id);
+        });
+      }
+
+      // Delete listener
+      const deleteBtn = card.querySelector('.btn-delete-link');
+      if (deleteBtn) {
+        deleteBtn.addEventListener('click', () => {
+          if (confirm(`Deseja realmente excluir "${item.title}"?`)) {
+            quickLinks = quickLinks.filter(l => l.id !== item.id);
+            saveQuickLinks();
+            renderQuickLinks();
+            showToast('Site excluído com sucesso!', 'default');
+          }
+        });
+      }
+
+      linksGrid.appendChild(card);
+    });
+  }
+
+  // Modal Functions
+  function openNewLinkModal() {
+    if (!linkModal) return;
+    linkModalTitle.textContent = 'Adicionar Novo Site';
+    linkIdInput.value = '';
+    linkUrlInput.value = '';
+    linkTitleInput.value = '';
+    linkCategoryInput.value = 'Ferramentas';
+    linkDescInput.value = '';
+    linkModal.classList.remove('hidden');
+    setTimeout(() => linkUrlInput.focus(), 50);
+  }
+
+  function openEditLinkModal(id) {
+    const item = quickLinks.find(l => l.id === id);
+    if (!item || !linkModal) return;
+    linkModalTitle.textContent = 'Editar Site';
+    linkIdInput.value = item.id;
+    linkUrlInput.value = item.url;
+    linkTitleInput.value = item.title;
+    linkCategoryInput.value = item.category || 'Geral';
+    linkDescInput.value = item.description || '';
+    linkModal.classList.remove('hidden');
+    setTimeout(() => linkTitleInput.focus(), 50);
+  }
+
+  function closeLinkModal() {
+    if (linkModal) linkModal.classList.add('hidden');
+  }
+
+  // Auto-fill title from URL if title is blank
+  if (linkUrlInput) {
+    linkUrlInput.addEventListener('blur', () => {
+      if (linkUrlInput.value && !linkTitleInput.value.trim()) {
+        linkTitleInput.value = suggestTitleFromUrl(linkUrlInput.value);
+      }
+    });
+  }
+
+  if (newLinkBtn) newLinkBtn.addEventListener('click', openNewLinkModal);
+  if (closeLinkModalBtn) closeLinkModalBtn.addEventListener('click', closeLinkModal);
+  if (cancelLinkBtn) cancelLinkBtn.addEventListener('click', closeLinkModal);
+
+  if (linkModal) {
+    linkModal.addEventListener('click', (e) => {
+      if (e.target === linkModal) closeLinkModal();
+    });
+  }
+
+  if (linkForm) {
+    linkForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const id = linkIdInput.value;
+      const url = normalizeUrl(linkUrlInput.value);
+      const title = linkTitleInput.value.trim();
+      const category = linkCategoryInput.value.trim() || 'Geral';
+      const description = linkDescInput.value.trim();
+
+      if (!url || !title) {
+        showToast('Preencha os campos obrigatórios.', 'error');
+        return;
+      }
+
+      if (id) {
+        // Edit
+        const idx = quickLinks.findIndex(l => l.id === id);
+        if (idx !== -1) {
+          quickLinks[idx] = {
+            ...quickLinks[idx],
+            title,
+            url,
+            category,
+            description,
+            updatedAt: new Date().toISOString()
+          };
+          showToast('Site atualizado com sucesso!', 'success');
+        }
+      } else {
+        // New
+        const newLink = {
+          id: 'link_' + Date.now(),
+          title,
+          url,
+          category,
+          description,
+          updatedAt: new Date().toISOString()
+        };
+        quickLinks.unshift(newLink);
+        showToast('Site adicionado com sucesso!', 'success');
+      }
+
+      saveQuickLinks();
+      closeLinkModal();
+      renderQuickLinks();
+    });
+  }
+
+  // Search & Category Filter
+  if (linkSearchInput) {
+    linkSearchInput.addEventListener('input', (e) => {
+      linkSearchQuery = e.target.value;
+      renderQuickLinks();
+    });
+  }
+
+  if (linkCategoryPills) {
+    linkCategoryPills.addEventListener('click', (e) => {
+      const pill = e.target.closest('.pill');
+      if (!pill) return;
+      linkCategoryPills.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      currentLinkCategory = pill.getAttribute('data-category');
+      renderQuickLinks();
+    });
+  }
+
+  // Export Links
+  if (exportLinksBtn) {
+    exportLinksBtn.addEventListener('click', () => {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(quickLinks, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `links_canivete_tp_${new Date().toISOString().slice(0,10)}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      showToast('Backup dos sites exportado com sucesso!', 'success');
+    });
+  }
+
+  // Import Links
+  if (importLinksBtn && importLinksFileInput) {
+    importLinksBtn.addEventListener('click', () => importLinksFileInput.click());
+    importLinksFileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const imported = JSON.parse(event.target.result);
+          if (Array.isArray(imported)) {
+            quickLinks = [...imported];
+            saveQuickLinks();
+            renderQuickLinks();
+            showToast(`${imported.length} site(s) importado(s) com sucesso!`, 'success');
+          } else {
+            showToast('Arquivo JSON inválido.', 'error');
+          }
+        } catch (err) {
+          showToast('Erro ao ler o arquivo JSON.', 'error');
+        }
+        importLinksFileInput.value = '';
+      };
+      reader.readAsText(file);
+    });
+  }
+
+  // Initialize Quick Links
+  loadQuickLinks();
+
 
   // =========================================================================
   // MODULE 2: THUMBNAIL & IMAGE CREATOR (HTML5 CANVAS ENGINE)
   // =========================================================================
-  const canvas = document.getElementById('mainCanvas');
-  const ctx = canvas.getContext('2d');
+  let canvas = null;
+  let ctx = null;
   const canvasViewport = document.getElementById('canvasViewport');
-  const canvasPresetSelect = document.getElementById('canvasPresetSelect');
-  const customDimensionsGroup = document.getElementById('customDimensionsGroup');
-  const customWidthInput = document.getElementById('customWidthInput');
-  const customHeightInput = document.getElementById('customHeightInput');
-  const applyCustomDimBtn = document.getElementById('applyCustomDimBtn');
+  const canvasWorkspace = document.getElementById('canvasWorkspace');
   const toggleSafeZoneBtn = document.getElementById('toggleSafeZoneBtn');
-  const safeZoneOverlay = document.getElementById('safeZoneOverlay');
   const clearCanvasBtn = document.getElementById('clearCanvasBtn');
   const undoBtn = document.getElementById('undoBtn');
   const redoBtn = document.getElementById('redoBtn');
   const exportPngBtn = document.getElementById('exportPngBtn');
   const exportJpgBtn = document.getElementById('exportJpgBtn');
   const copyImageBtn = document.getElementById('copyImageBtn');
+
+  // Shortcuts Modal elements
+  const shortcutsModal = document.getElementById('shortcutsModal');
+  const shortcutsModalBtn = document.getElementById('shortcutsModalBtn');
+  const floatingShortcutsBtn = document.getElementById('floatingShortcutsBtn');
+  const closeShortcutsModalBtn = document.getElementById('closeShortcutsModalBtn');
+  const dismissShortcutsBtn = document.getElementById('dismissShortcutsBtn');
+
+  function openShortcutsModal() {
+    if (shortcutsModal) shortcutsModal.classList.remove('hidden');
+  }
+
+  function closeShortcutsModal() {
+    if (shortcutsModal) shortcutsModal.classList.add('hidden');
+  }
 
   // Left tools
   const toolAddText = document.getElementById('toolAddText');
@@ -530,7 +1016,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const propShapeRadiusVal = document.getElementById('propShapeRadiusVal');
   const propShapeOpacity = document.getElementById('propShapeOpacity');
   const propShapeOpacityVal = document.getElementById('propShapeOpacityVal');
-
   // Layer order actions
   const btnBringForward = document.getElementById('btnBringForward');
   const btnSendBackward = document.getElementById('btnSendBackward');
@@ -543,11 +1028,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Canvas State
   class CanvasEngine {
     constructor() {
-      this.width = 1280;
-      this.height = 720;
-      this.bgColor = '#0f172a';
-      this.elements = [];
-      this.selectedId = null;
+      this.canvases = [];
+      this.activeCanvasId = null;
+      this.canvasCount = 0;
 
       // Interaction state
       this.isDragging = false;
@@ -558,21 +1041,471 @@ document.addEventListener('DOMContentLoaded', () => {
       this.dragStartY = 0;
       this.initialElementState = null;
 
-      // History
+      // Synced active canvas properties
+      this.width = 1280;
+      this.height = 720;
+      this.bgColor = '#0f172a';
+      this.elements = [];
+      this.selectedId = null;
       this.history = [];
       this.historyIndex = -1;
-
-      // Safe zone
       this.showSafeZone = true;
+
+      // Zoom & Pan state
+      this.zoomLevel = 1.0;
+      this.panX = 0;
+      this.panY = 0;
+      this.isPanning = false;
+      this.isPanMode = false;
+      this.panStartX = 0;
+      this.panStartY = 0;
+      this.isSpacePressed = false;
 
       this.init();
     }
 
+    getActiveCanvas() {
+      return this.canvases.find(c => c.id === this.activeCanvasId) || this.canvases[0];
+    }
+
     init() {
-      this.updateCanvasDimensions(1280, 720);
+      this.createCanvasBoard('1280x720', null, null, 'Canvas 1');
       this.setupEventListeners();
       this.setupInitialPreset();
+      this.updateZoomTransform();
       this.saveHistory();
+    }
+
+    createCanvasBoard(preset = '1280x720', x = null, y = null, name = null, initialElements = null) {
+      this.canvasCount++;
+      const id = `canvas_${this.canvasCount}`;
+      const canvasName = name || `Canvas ${this.canvasCount}`;
+
+      let [w, h] = [1280, 720];
+      if (preset === '1920x1080') [w, h] = [1920, 1080];
+      else if (preset === '1080x1080') [w, h] = [1080, 1080];
+      else if (preset === '1080x1920') [w, h] = [1080, 1920];
+      else if (preset === '2560x1440') [w, h] = [2560, 1440];
+
+      const DISPLAY_SCALE = 0.55;
+      const renderedW = Math.round(w * DISPLAY_SCALE);
+      const renderedH = Math.round(h * DISPLAY_SCALE);
+
+      if (x === null || y === null) {
+        x = -Math.round(renderedW / 2);
+        y = -Math.round(renderedH / 2);
+      }
+
+      const boardEl = document.createElement('div');
+      boardEl.className = 'canvas-board';
+      boardEl.id = `canvasBoard_${id}`;
+      boardEl.dataset.canvasId = id;
+      boardEl.style.left = `${x}px`;
+      boardEl.style.top = `${y}px`;
+
+      boardEl.innerHTML = `
+        <!-- FigJam-style 4 Add Buttons -->
+        <button class="figjam-add-btn add-top" data-dir="top" title="Criar novo canvas acima">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+        <button class="figjam-add-btn add-right" data-dir="right" title="Criar novo canvas à direita">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+        <button class="figjam-add-btn add-bottom" data-dir="bottom" title="Criar novo canvas abaixo">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+        <button class="figjam-add-btn add-left" data-dir="left" title="Criar novo canvas à esquerda">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+
+        <!-- Attached Tab on top of this Canvas -->
+        <div class="canvas-attached-tab">
+          <div class="canvas-tab-handle">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M15 3v18"/><path d="M3 9h18"/><path d="M3 15h18"/></svg>
+            <span class="canvas-name-text">${canvasName}</span>
+          </div>
+
+          <select class="form-select canvas-tab-select preset-select">
+            <option value="1280x720" ${preset === '1280x720' ? 'selected' : ''}>YouTube Thumbnail</option>
+            <option value="1920x1080" ${preset === '1920x1080' ? 'selected' : ''}>Full HD</option>
+            <option value="1080x1080" ${preset === '1080x1080' ? 'selected' : ''}>Post Quadrado / Comunidade</option>
+            <option value="1080x1920" ${preset === '1080x1920' ? 'selected' : ''}>Shorts / Reels / Stories</option>
+            <option value="2560x1440" ${preset === '2560x1440' ? 'selected' : ''}>YouTube Banner / Capa</option>
+            <option value="custom" ${preset === 'custom' ? 'selected' : ''}>Personalizado...</option>
+          </select>
+
+          <div class="custom-dims-group hidden">
+            <input type="number" class="custom-width-input" value="${w}" min="100" max="4000" placeholder="L">
+            <span>×</span>
+            <input type="number" class="custom-height-input" value="${h}" min="100" max="4000" placeholder="A">
+            <button class="btn btn-xs btn-primary apply-custom-btn">OK</button>
+          </div>
+
+          <span class="canvas-tab-badge">${w} × ${h} px</span>
+
+          <button class="canvas-close-btn" title="Excluir este canvas" style="display: none;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        <!-- Canvas Container -->
+        <div class="canvas-container" style="width: ${renderedW}px; height: ${renderedH}px; aspect-ratio: ${w}/${h};">
+          <canvas class="artboard-canvas" width="${w}" height="${h}"></canvas>
+          <div class="safe-zone-overlay ${preset === '1280x720' || preset === '1920x1080' ? 'active' : ''}">
+            <div class="yt-time-badge-mock">00:00</div>
+          </div>
+        </div>
+      `;
+
+      if (canvasWorkspace) canvasWorkspace.appendChild(boardEl);
+
+      const canvasEl = boardEl.querySelector('.artboard-canvas');
+      const containerEl = boardEl.querySelector('.canvas-container');
+      const attachedTab = boardEl.querySelector('.canvas-attached-tab');
+      const presetSelect = boardEl.querySelector('.preset-select');
+      const customGroup = boardEl.querySelector('.custom-dims-group');
+      const customWidthInput = boardEl.querySelector('.custom-width-input');
+      const customHeightInput = boardEl.querySelector('.custom-height-input');
+      const applyCustomBtn = boardEl.querySelector('.apply-custom-btn');
+      const badgeEl = boardEl.querySelector('.canvas-tab-badge');
+      const closeBtn = boardEl.querySelector('.canvas-close-btn');
+      const safeZoneOverlay = boardEl.querySelector('.safe-zone-overlay');
+
+      const canvasObj = {
+        id,
+        name: canvasName,
+        x,
+        y,
+        width: w,
+        height: h,
+        preset,
+        bgColor: '#0f172a',
+        elements: initialElements || [],
+        selectedId: null,
+        history: [],
+        historyIndex: -1,
+        showSafeZone: (w === 1280 && h === 720) || (w === 1920 && h === 1080),
+        boardEl,
+        containerEl,
+        canvasEl,
+        ctx: canvasEl.getContext('2d'),
+        presetSelect,
+        customGroup,
+        customWidthInput,
+        customHeightInput,
+        badgeEl,
+        closeBtn,
+        safeZoneOverlay
+      };
+
+      attachedTab.addEventListener('mousedown', (e) => e.stopPropagation());
+
+      boardEl.querySelectorAll('.figjam-add-btn').forEach(btn => {
+        btn.addEventListener('mousedown', (e) => e.stopPropagation());
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.addAdjacentCanvas(id, btn.dataset.dir);
+        });
+      });
+
+      presetSelect.addEventListener('change', (e) => {
+        const val = e.target.value;
+        if (val === 'custom') {
+          customGroup.classList.remove('hidden');
+        } else {
+          customGroup.classList.add('hidden');
+          const [pw, ph] = val.split('x').map(Number);
+          canvasObj.preset = val;
+          this.updateCanvasDimensions(id, pw, ph, true);
+          showToast(`Tamanho do ${canvasName} alterado para ${pw} × ${ph} px`, 'success');
+        }
+      });
+
+      applyCustomBtn.addEventListener('click', () => {
+        const cw = parseInt(customWidthInput.value, 10) || 1280;
+        const ch = parseInt(customHeightInput.value, 10) || 720;
+        canvasObj.preset = 'custom';
+        this.updateCanvasDimensions(id, cw, ch, true);
+        showToast(`Tamanho personalizado: ${cw} × ${ch} px`, 'success');
+      });
+
+      closeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.deleteCanvas(id);
+      });
+
+      boardEl.addEventListener('mousedown', () => {
+        if (this.activeCanvasId !== id) {
+          this.setActiveCanvas(id);
+        }
+      });
+
+      canvasEl.addEventListener('mousedown', (e) => {
+        if (this.activeCanvasId !== id) {
+          this.setActiveCanvas(id);
+        }
+        this.handleMouseDown(e);
+      });
+
+      this.canvases.push(canvasObj);
+      this.setActiveCanvas(id);
+      this.updateCanvasCloseButtons();
+
+      return canvasObj;
+    }
+
+    updateCanvasCloseButtons() {
+      const show = this.canvases.length > 1;
+      this.canvases.forEach(c => {
+        if (c.closeBtn) c.closeBtn.style.display = show ? 'flex' : 'none';
+      });
+    }
+
+    setActiveCanvas(canvasId) {
+      const c = this.canvases.find(item => item.id === canvasId);
+      if (!c) return;
+
+      this.activeCanvasId = c.id;
+
+      // Sync active state variables
+      canvas = c.canvasEl;
+      ctx = c.ctx;
+      this.width = c.width;
+      this.height = c.height;
+      this.bgColor = c.bgColor;
+      this.elements = c.elements;
+      this.selectedId = c.selectedId;
+      this.history = c.history;
+      this.historyIndex = c.historyIndex;
+      this.showSafeZone = c.showSafeZone;
+
+      this.canvases.forEach(item => {
+        item.boardEl.classList.toggle('active', item.id === c.id);
+      });
+
+      this.updateCanvasCloseButtons();
+
+      if (toggleSafeZoneBtn) {
+        toggleSafeZoneBtn.classList.toggle('active', this.showSafeZone);
+      }
+
+      const canvasBgColorInput = document.getElementById('canvasBgColorInput');
+      if (canvasBgColorInput) {
+        canvasBgColorInput.value = this.bgColor;
+      }
+
+      this.updateInspector();
+      this.renderLayers();
+      this.updateHistoryButtons();
+      this.renderAll();
+    }
+
+    getBoardBounds(c) {
+      const DISPLAY_SCALE = 0.55;
+      const w = Math.max(320, (c.boardEl && c.boardEl.offsetWidth > 0) ? c.boardEl.offsetWidth : Math.round(c.width * DISPLAY_SCALE));
+      const h = Math.max(220, (c.boardEl && c.boardEl.offsetHeight > 0) ? c.boardEl.offsetHeight : Math.round(c.height * DISPLAY_SCALE) + 38);
+      return {
+        id: c.id,
+        x: c.x,
+        y: c.y,
+        w,
+        h,
+        right: c.x + w,
+        bottom: c.y + h,
+        cx: c.x + w / 2,
+        cy: c.y + h / 2
+      };
+    }
+
+    checkOverlap(b1, b2, gap = 80) {
+      return (
+        b1.x < b2.right + gap &&
+        b1.right + gap > b2.x &&
+        b1.y < b2.bottom + gap &&
+        b1.bottom + gap > b2.y
+      );
+    }
+
+    resolveCollisions(priorityCanvasId = null) {
+      const GAP = 80;
+      let changed = true;
+      let iterations = 0;
+      const maxIterations = 35;
+
+      while (changed && iterations < maxIterations) {
+        changed = false;
+        iterations++;
+
+        for (let i = 0; i < this.canvases.length; i++) {
+          for (let j = 0; j < this.canvases.length; j++) {
+            if (i === j) continue;
+
+            const c1 = this.canvases[i];
+            const c2 = this.canvases[j];
+
+            const b1 = this.getBoardBounds(c1);
+            const b2 = this.getBoardBounds(c2);
+
+            if (this.checkOverlap(b1, b2, GAP)) {
+              changed = true;
+
+              // Determine which canvas to push
+              let fixed = c1;
+              let toPush = c2;
+
+              if (c2.id === priorityCanvasId) {
+                fixed = c2;
+                toPush = c1;
+              } else if (c1.id !== priorityCanvasId) {
+                const dist1 = Math.hypot(b1.cx, b1.cy);
+                const dist2 = Math.hypot(b2.cx, b2.cy);
+                if (dist1 > dist2) {
+                  fixed = c2;
+                  toPush = c1;
+                } else {
+                  fixed = c1;
+                  toPush = c2;
+                }
+              }
+
+              const fb = this.getBoardBounds(fixed);
+              const pb = this.getBoardBounds(toPush);
+
+              const dx = pb.cx - fb.cx;
+              const dy = pb.cy - fb.cy;
+
+              const normX = Math.abs(dx) / ((fb.w + pb.w) / 2);
+              const normY = Math.abs(dy) / ((fb.h + pb.h) / 2);
+
+              if (normX > normY) {
+                if (dx >= 0) {
+                  toPush.x = fb.right + GAP;
+                } else {
+                  toPush.x = fb.x - pb.w - GAP;
+                }
+              } else {
+                if (dy >= 0) {
+                  toPush.y = fb.bottom + GAP;
+                } else {
+                  toPush.y = fb.y - pb.h - GAP;
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // Sync DOM positions
+      this.canvases.forEach(c => {
+        if (c.boardEl) {
+          c.boardEl.style.left = `${c.x}px`;
+          c.boardEl.style.top = `${c.y}px`;
+        }
+      });
+    }
+
+    addAdjacentCanvas(sourceId, direction) {
+      const source = this.canvases.find(c => c.id === sourceId);
+      if (!source) return;
+
+      const DISPLAY_SCALE = 0.55;
+      const GAP = 80;
+
+      const preset = source.preset || '1280x720';
+      const w = source.width;
+      const h = source.height;
+
+      const sourceBounds = this.getBoardBounds(source);
+      const newRenderedW = Math.max(340, Math.round(w * DISPLAY_SCALE));
+      const newRenderedH = Math.round(h * DISPLAY_SCALE) + 38;
+
+      let newX = source.x;
+      let newY = source.y;
+
+      if (direction === 'right') {
+        newX = sourceBounds.right + GAP;
+        newY = source.y;
+      } else if (direction === 'left') {
+        newX = sourceBounds.x - newRenderedW - GAP;
+        newY = source.y;
+      } else if (direction === 'bottom') {
+        newX = source.x;
+        newY = sourceBounds.bottom + GAP;
+      } else if (direction === 'top') {
+        newX = source.x;
+        newY = sourceBounds.y - newRenderedH - GAP;
+      }
+
+      // Push existing canvases in the expansion direction to make room
+      const shiftX = newRenderedW + GAP;
+      const shiftY = newRenderedH + GAP;
+
+      this.canvases.forEach(other => {
+        if (other.id === source.id) return;
+        const ob = this.getBoardBounds(other);
+
+        if (direction === 'right' && ob.x >= sourceBounds.right - 10) {
+          other.x += shiftX;
+          if (other.boardEl) other.boardEl.style.left = `${other.x}px`;
+        } else if (direction === 'left' && ob.right <= sourceBounds.x + 10) {
+          other.x -= shiftX;
+          if (other.boardEl) other.boardEl.style.left = `${other.x}px`;
+        } else if (direction === 'bottom' && ob.y >= sourceBounds.bottom - 10) {
+          other.y += shiftY;
+          if (other.boardEl) other.boardEl.style.top = `${other.y}px`;
+        } else if (direction === 'top' && ob.bottom <= sourceBounds.y + 10) {
+          other.y -= shiftY;
+          if (other.boardEl) other.boardEl.style.top = `${other.y}px`;
+        }
+      });
+
+      const newCanvas = this.createCanvasBoard(preset, newX, newY, null, []);
+
+      // Resolve secondary / dimensional overlaps
+      this.resolveCollisions(newCanvas.id);
+
+      this.saveHistory();
+      this.renderAll();
+
+      const dirName = direction === 'right' ? 'à direita' : direction === 'left' ? 'à esquerda' : direction === 'bottom' ? 'abaixo' : 'acima';
+      showToast(`Novo canvas criado ${dirName}!`, 'success');
+    }
+
+    deleteCanvas(canvasId) {
+      if (this.canvases.length <= 1) {
+        showToast('É necessário manter pelo menos um canvas no projeto.', 'warning');
+        return;
+      }
+
+      const target = this.canvases.find(c => c.id === canvasId);
+      if (!target) return;
+
+      if (!confirm(`Deseja realmente excluir "${target.name}"?`)) return;
+
+      target.boardEl.remove();
+      this.canvases = this.canvases.filter(c => c.id !== canvasId);
+
+      if (this.activeCanvasId === canvasId) {
+        this.setActiveCanvas(this.canvases[0].id);
+      } else {
+        this.updateCanvasCloseButtons();
+      }
+
+      showToast('Canvas removido.', 'info');
+    }
+
+    toggleSafeZone() {
+      const active = this.getActiveCanvas();
+      if (!active) return;
+      active.showSafeZone = !active.showSafeZone;
+      this.showSafeZone = active.showSafeZone;
+
+      if (toggleSafeZoneBtn) {
+        toggleSafeZoneBtn.classList.toggle('active', this.showSafeZone);
+      }
+      if (active.safeZoneOverlay) {
+        active.safeZoneOverlay.classList.toggle('active', this.showSafeZone);
+      }
     }
 
     setupInitialPreset() {
@@ -628,64 +1561,211 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    updateCanvasDimensions(w, h) {
-      this.width = w;
-      this.height = h;
-      canvas.width = w;
-      canvas.height = h;
-      this.render();
+    updateCanvasDimensions(targetIdOrW, h = null, repositionElements = false) {
+      let c = null;
+      let w = 1280;
+      let newH = 720;
+      let shouldReposition = repositionElements;
+
+      if (typeof targetIdOrW === 'string') {
+        c = this.canvases.find(item => item.id === targetIdOrW);
+        w = h;
+        newH = arguments[2] || 720;
+        shouldReposition = Boolean(arguments[3]);
+      } else {
+        c = this.getActiveCanvas();
+        w = targetIdOrW;
+        newH = h;
+      }
+
+      if (!c) return;
+
+      const oldW = c.width || 1280;
+      const oldH = c.height || 720;
+      c.width = w;
+      c.height = newH;
+      c.canvasEl.width = w;
+      c.canvasEl.height = newH;
+
+      const DISPLAY_SCALE = 0.55;
+      const renderedW = Math.round(w * DISPLAY_SCALE);
+      const renderedH = Math.round(newH * DISPLAY_SCALE);
+
+      c.containerEl.style.width = `${renderedW}px`;
+      c.containerEl.style.height = `${renderedH}px`;
+      c.containerEl.style.aspectRatio = `${w} / ${newH}`;
+
+      if (c.badgeEl) {
+        c.badgeEl.textContent = `${w} × ${newH} px`;
+      }
+
+      const isYouTube16x9 = (w === 1280 && newH === 720) || (w === 1920 && newH === 1080);
+      if (c.safeZoneOverlay) {
+        if (!isYouTube16x9) {
+          c.safeZoneOverlay.classList.remove('active');
+        } else if (c.showSafeZone) {
+          c.safeZoneOverlay.classList.add('active');
+        }
+      }
+
+      if (shouldReposition && (oldW !== w || oldH !== newH) && c.elements.length > 0) {
+        const scaleX = w / oldW;
+        const scaleY = newH / oldH;
+        c.elements.forEach(el => {
+          el.x = Math.round(el.x * scaleX);
+          el.y = Math.round(el.y * scaleY);
+          if (el.type === 'shape' || el.type === 'image') {
+            el.width = Math.round(el.width * scaleX);
+            el.height = Math.round(el.height * scaleY);
+          } else if (el.type === 'text') {
+            const fontScale = (scaleX + scaleY) / 2;
+            el.fontSize = Math.max(16, Math.round(el.fontSize * fontScale));
+          }
+        });
+      }
+
+      if (this.activeCanvasId === c.id) {
+        this.width = w;
+        this.height = newH;
+      }
+
+      // Push any neighboring canvases if dimensions expanded into them
+      this.resolveCollisions(c.id);
+
+      this.saveHistory();
+      this.render(c.id);
+    }
+
+    // ZOOM & PAN CONTROLS
+    updateZoomTransform() {
+      const zoomLevelDisplay = document.getElementById('zoomLevelDisplay');
+      if (canvasWorkspace) {
+        canvasWorkspace.style.transform = `translate(${this.panX}px, ${this.panY}px) scale(${this.zoomLevel})`;
+      }
+      if (zoomLevelDisplay) {
+        zoomLevelDisplay.textContent = `${Math.round(this.zoomLevel * 100)}%`;
+      }
+    }
+
+    applyZoom(factor, clientX, clientY) {
+      const minZoom = 0.25;
+      const maxZoom = 4.0;
+      const oldZoom = this.zoomLevel;
+      let newZoom = Math.min(Math.max(oldZoom * factor, minZoom), maxZoom);
+
+      if (clientX !== undefined && clientY !== undefined && canvasViewport) {
+        const vpRect = canvasViewport.getBoundingClientRect();
+        const mouseX = clientX - (vpRect.left + vpRect.width / 2);
+        const mouseY = clientY - (vpRect.top + vpRect.height / 2);
+
+        this.panX = mouseX - (mouseX - this.panX) * (newZoom / oldZoom);
+        this.panY = mouseY - (mouseY - this.panY) * (newZoom / oldZoom);
+      }
+
+      this.zoomLevel = newZoom;
+      this.updateZoomTransform();
+    }
+
+    zoomIn() {
+      this.applyZoom(1.2);
+    }
+
+    zoomOut() {
+      this.applyZoom(1 / 1.2);
+    }
+
+    resetZoom() {
+      this.zoomLevel = 1.0;
+      this.panX = 0;
+      this.panY = 0;
+      this.updateZoomTransform();
+    }
+
+    setPanMode(enabled) {
+      this.isPanMode = enabled;
+      const toolPanCanvas = document.getElementById('toolPanCanvas');
+      const panModeToggleBtn = document.getElementById('panModeToggleBtn');
+      if (toolPanCanvas) toolPanCanvas.classList.toggle('active', this.isPanMode);
+      if (panModeToggleBtn) panModeToggleBtn.classList.toggle('active', this.isPanMode);
+
+      const cursor = this.isPanMode ? 'grab' : '';
+      if (canvasViewport) canvasViewport.style.cursor = cursor;
+      if (canvas) canvas.style.cursor = this.isPanMode ? 'grab' : 'crosshair';
     }
 
     saveHistory() {
-      // Cut off redo steps
-      if (this.historyIndex < this.history.length - 1) {
-        this.history = this.history.slice(0, this.historyIndex + 1);
+      const active = this.getActiveCanvas();
+      if (!active) return;
+
+      if (active.historyIndex < active.history.length - 1) {
+        active.history = active.history.slice(0, active.historyIndex + 1);
       }
 
       const snapshot = {
-        width: this.width,
-        height: this.height,
-        bgColor: this.bgColor,
-        elements: this.elements.map(el => ({ ...el }))
+        width: active.width,
+        height: active.height,
+        bgColor: active.bgColor,
+        preset: active.preset,
+        elements: active.elements.map(el => ({ ...el }))
       };
 
-      this.history.push(JSON.stringify(snapshot));
-      this.historyIndex++;
+      active.history.push(JSON.stringify(snapshot));
+      active.historyIndex++;
 
-      // Max 30 states
-      if (this.history.length > 30) {
-        this.history.shift();
-        this.historyIndex--;
+      if (active.history.length > 30) {
+        active.history.shift();
+        active.historyIndex--;
       }
 
+      this.history = active.history;
+      this.historyIndex = active.historyIndex;
       this.updateHistoryButtons();
     }
 
     undo() {
-      if (this.historyIndex > 0) {
-        this.historyIndex--;
-        this.loadSnapshot(this.history[this.historyIndex]);
+      const active = this.getActiveCanvas();
+      if (active && active.historyIndex > 0) {
+        active.historyIndex--;
+        this.loadSnapshot(active.history[active.historyIndex]);
       }
     }
 
     redo() {
-      if (this.historyIndex < this.history.length - 1) {
-        this.historyIndex++;
-        this.loadSnapshot(this.history[this.historyIndex]);
+      const active = this.getActiveCanvas();
+      if (active && active.historyIndex < active.history.length - 1) {
+        active.historyIndex++;
+        this.loadSnapshot(active.history[active.historyIndex]);
       }
     }
 
     loadSnapshot(snapshotJson) {
+      const active = this.getActiveCanvas();
+      if (!active) return;
+
       const data = JSON.parse(snapshotJson);
-      this.width = data.width;
-      this.height = data.height;
-      this.bgColor = data.bgColor;
-      canvas.width = data.width;
-      canvas.height = data.height;
-      canvasBgColorInput.value = data.bgColor;
+      active.width = data.width;
+      active.height = data.height;
+      active.bgColor = data.bgColor;
+      active.preset = data.preset || '1280x720';
+      active.canvasEl.width = data.width;
+      active.canvasEl.height = data.height;
+
+      const DISPLAY_SCALE = 0.55;
+      active.containerEl.style.width = `${Math.round(data.width * DISPLAY_SCALE)}px`;
+      active.containerEl.style.height = `${Math.round(data.height * DISPLAY_SCALE)}px`;
+      active.containerEl.style.aspectRatio = `${data.width} / ${data.height}`;
+
+      if (active.badgeEl) {
+        active.badgeEl.textContent = `${data.width} × ${data.height} px`;
+      }
+      if (active.presetSelect) {
+        const key = `${data.width}x${data.height}`;
+        const match = Array.from(active.presetSelect.options).some(opt => opt.value === key);
+        active.presetSelect.value = match ? key : 'custom';
+      }
 
       // Re-link images
-      this.elements = data.elements.map(el => {
+      active.elements = data.elements.map(el => {
         if (el.type === 'image' && el.src) {
           const img = new Image();
           img.src = el.src;
@@ -694,7 +1774,16 @@ document.addEventListener('DOMContentLoaded', () => {
         return el;
       });
 
+      this.width = data.width;
+      this.height = data.height;
+      this.bgColor = data.bgColor;
+      this.elements = active.elements;
       this.selectedId = null;
+      active.selectedId = null;
+
+      const canvasBgColorInput = document.getElementById('canvasBgColorInput');
+      if (canvasBgColorInput) canvasBgColorInput.value = data.bgColor;
+
       this.render();
       this.updateInspector();
       this.renderLayers();
@@ -702,15 +1791,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     updateHistoryButtons() {
-      undoBtn.disabled = this.historyIndex <= 0;
-      redoBtn.disabled = this.historyIndex >= this.history.length - 1;
+      const active = this.getActiveCanvas();
+      const idx = active ? active.historyIndex : this.historyIndex;
+      const len = active ? active.history.length : this.history.length;
+      undoBtn.disabled = idx <= 0;
+      redoBtn.disabled = idx >= len - 1;
     }
-
     addElement(el) {
+      const active = this.getActiveCanvas();
+      if (!active) return;
       const id = 'el_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
       el.id = id;
-      this.elements.push(el);
+      active.elements.push(el);
+      active.selectedId = id;
       this.selectedId = id;
+      this.elements = active.elements;
       this.saveHistory();
       this.render();
       this.updateInspector();
@@ -718,13 +1813,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     getSelected() {
-      return this.elements.find(el => el.id === this.selectedId);
+      const active = this.getActiveCanvas();
+      if (!active) return null;
+      return active.elements.find(el => el.id === active.selectedId);
     }
 
     deleteSelected() {
-      if (!this.selectedId) return;
-      this.elements = this.elements.filter(el => el.id !== this.selectedId);
+      const active = this.getActiveCanvas();
+      if (!active || !active.selectedId) return;
+      active.elements = active.elements.filter(el => el.id !== active.selectedId);
+      active.selectedId = null;
       this.selectedId = null;
+      this.elements = active.elements;
       this.saveHistory();
       this.render();
       this.updateInspector();
@@ -734,12 +1834,15 @@ document.addEventListener('DOMContentLoaded', () => {
     duplicateSelected() {
       const sel = this.getSelected();
       if (!sel) return;
+      const active = this.getActiveCanvas();
       const copy = { ...sel };
       copy.id = 'el_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
       copy.x += 30;
       copy.y += 30;
-      this.elements.push(copy);
+      active.elements.push(copy);
+      active.selectedId = copy.id;
       this.selectedId = copy.id;
+      this.elements = active.elements;
       this.saveHistory();
       this.render();
       this.updateInspector();
@@ -747,10 +1850,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     bringForward() {
-      const index = this.elements.findIndex(el => el.id === this.selectedId);
-      if (index !== -1 && index < this.elements.length - 1) {
-        const item = this.elements.splice(index, 1)[0];
-        this.elements.splice(index + 1, 0, item);
+      const active = this.getActiveCanvas();
+      if (!active) return;
+      const index = active.elements.findIndex(el => el.id === active.selectedId);
+      if (index !== -1 && index < active.elements.length - 1) {
+        const item = active.elements.splice(index, 1)[0];
+        active.elements.splice(index + 1, 0, item);
         this.saveHistory();
         this.render();
         this.renderLayers();
@@ -758,10 +1863,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     sendBackward() {
-      const index = this.elements.findIndex(el => el.id === this.selectedId);
+      const active = this.getActiveCanvas();
+      if (!active) return;
+      const index = active.elements.findIndex(el => el.id === active.selectedId);
       if (index > 0) {
-        const item = this.elements.splice(index, 1)[0];
-        this.elements.splice(index - 1, 0, item);
+        const item = active.elements.splice(index, 1)[0];
+        active.elements.splice(index - 1, 0, item);
         this.saveHistory();
         this.render();
         this.renderLayers();
@@ -769,22 +1876,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // MAIN RENDER PIPELINE
-    render(skipSelection = false) {
-      ctx.clearRect(0, 0, this.width, this.height);
+    render(canvasId = null, skipSelection = false) {
+      const targetId = canvasId || this.activeCanvasId;
+      const c = this.canvases.find(item => item.id === targetId);
+      if (!c) return;
+
+      const targetCtx = c.ctx;
+      targetCtx.clearRect(0, 0, c.width, c.height);
 
       // 1. Draw Canvas Background
-      ctx.fillStyle = this.bgColor;
-      ctx.fillRect(0, 0, this.width, this.height);
+      targetCtx.fillStyle = c.bgColor;
+      targetCtx.fillRect(0, 0, c.width, c.height);
+
+      const prevCtx = ctx;
+      ctx = targetCtx;
 
       // 2. Draw Elements in order
-      this.elements.forEach(el => {
-        ctx.save();
-        ctx.globalAlpha = el.opacity !== undefined ? el.opacity : 1;
+      c.elements.forEach(el => {
+        targetCtx.save();
+        targetCtx.globalAlpha = el.opacity !== undefined ? el.opacity : 1;
 
-        // Position & Rotate around element center
-        ctx.translate(el.x, el.y);
+        targetCtx.translate(el.x, el.y);
         if (el.rotation) {
-          ctx.rotate((el.rotation * Math.PI) / 180);
+          targetCtx.rotate((el.rotation * Math.PI) / 180);
         }
 
         if (el.type === 'text') {
@@ -795,18 +1909,23 @@ document.addEventListener('DOMContentLoaded', () => {
           this.renderShapeElement(el);
         }
 
-        ctx.restore();
+        targetCtx.restore();
       });
 
-      // 3. Draw Selection Box & Handles (if not exporting)
-      if (!skipSelection && this.selectedId) {
-        const sel = this.getSelected();
+      // 3. Draw Selection bounding box only on active canvas
+      if (c.id === this.activeCanvasId && c.selectedId && !skipSelection && !this.isExporting) {
+        const sel = c.elements.find(el => el.id === c.selectedId);
         if (sel) {
           this.renderSelectionOutline(sel);
         }
       }
+
+      ctx = prevCtx || targetCtx;
     }
 
+    renderAll() {
+      this.canvases.forEach(c => this.render(c.id));
+    }
     renderTextElement(el) {
       ctx.font = `${el.fontWeight || '900'} ${el.fontSize}px ${el.fontFamily}`;
       ctx.textAlign = 'center';
@@ -1023,9 +2142,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // HIT TESTING & INTERACTION
     getCanvasCoords(e) {
-      const rect = canvas.getBoundingClientRect();
-      const scaleX = canvas.width / rect.width;
-      const scaleY = canvas.height / rect.height;
+      const active = this.getActiveCanvas();
+      const target = active ? active.canvasEl : canvas;
+      if (!target) return { x: 0, y: 0 };
+      const rect = target.getBoundingClientRect();
+      const scaleX = target.width / rect.width;
+      const scaleY = target.height / rect.height;
       return {
         x: (e.clientX - rect.left) * scaleX,
         y: (e.clientY - rect.top) * scaleY
@@ -1033,16 +2155,100 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     setupEventListeners() {
-      canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
-      window.addEventListener('mousemove', (e) => this.handleMouseMove(e));
-      window.addEventListener('mouseup', () => this.handleMouseUp());
+      // MOUSE WHEEL ZOOM ON CANVAS VIEWPORT
+      if (canvasViewport) {
+        canvasViewport.addEventListener('wheel', (e) => {
+          e.preventDefault();
+          const delta = -e.deltaY;
+          const factor = delta > 0 
+            ? Math.min(1 + delta * 0.0018, 1.3) 
+            : Math.max(1 / (1 + (-delta) * 0.0018), 0.7);
+          this.applyZoom(factor, e.clientX, e.clientY);
+        }, { passive: false });
+
+        // VIEWPORT PANNING (drag on background or middle-click or space)
+        canvasViewport.addEventListener('mousedown', (e) => {
+          if (e.target === canvasViewport || e.target === canvasWorkspace || e.button === 1 || this.isSpacePressed) {
+            this.isPanning = true;
+            this.panStartX = e.clientX - this.panX;
+            this.panStartY = e.clientY - this.panY;
+            canvasViewport.style.cursor = 'grabbing';
+            e.preventDefault();
+          }
+        });
+      }
+
+      window.addEventListener('mousemove', (e) => {
+        if (this.isPanning) {
+          this.panX = e.clientX - this.panStartX;
+          this.panY = e.clientY - this.panStartY;
+          this.updateZoomTransform();
+          return;
+        }
+        this.handleMouseMove(e);
+      });
+
+      window.addEventListener('mouseup', () => {
+        if (this.isPanning) {
+          this.isPanning = false;
+          if (canvasViewport) {
+            canvasViewport.style.cursor = this.isSpacePressed ? 'grab' : '';
+          }
+        }
+        this.handleMouseUp();
+      });
+
+      // Zoom Controls Buttons
+      const zoomInBtn = document.getElementById('zoomInBtn');
+      const zoomOutBtn = document.getElementById('zoomOutBtn');
+      const zoomResetBtn = document.getElementById('zoomResetBtn');
+      const zoomFitBtn = document.getElementById('zoomFitBtn');
+      const panModeToggleBtn = document.getElementById('panModeToggleBtn');
+      const toolPanCanvas = document.getElementById('toolPanCanvas');
+
+      if (zoomInBtn) zoomInBtn.addEventListener('click', () => this.zoomIn());
+      if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => this.zoomOut());
+      if (zoomResetBtn) zoomResetBtn.addEventListener('click', () => this.resetZoom());
+      if (zoomFitBtn) zoomFitBtn.addEventListener('click', () => this.resetZoom());
+      if (panModeToggleBtn) panModeToggleBtn.addEventListener('click', () => this.setPanMode(!this.isPanMode));
+      if (toolPanCanvas) toolPanCanvas.addEventListener('click', () => this.setPanMode(!this.isPanMode));
 
       // Keyboard shortcuts
       window.addEventListener('keydown', (e) => {
         // Only trigger if not focusing an input or textarea
         if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
 
-        if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (e.code === 'Space' && !this.isSpacePressed) {
+          this.isSpacePressed = true;
+          if (canvasViewport) canvasViewport.style.cursor = 'grab';
+          if (canvas) canvas.style.cursor = 'grab';
+        } else if (e.key === '?' || (e.key === '/' && e.shiftKey) || e.key === 'F1') {
+          e.preventDefault();
+          openShortcutsModal();
+        } else if (e.key === 'Escape') {
+          if (shortcutsModal && !shortcutsModal.classList.contains('hidden')) {
+            e.preventDefault();
+            closeShortcutsModal();
+          } else if (this.isPanMode) {
+            e.preventDefault();
+            this.setPanMode(false);
+          }
+        } else if ((e.key === 'h' || e.key === 'H') && !e.ctrlKey && !e.metaKey) {
+          e.preventDefault();
+          this.setPanMode(!this.isPanMode);
+        } else if ((e.key === 'v' || e.key === 'V') && !e.ctrlKey && !e.metaKey) {
+          e.preventDefault();
+          this.setPanMode(false);
+        } else if ((e.ctrlKey || e.metaKey) && (e.key === '=' || e.key === '+')) {
+          e.preventDefault();
+          this.zoomIn();
+        } else if ((e.ctrlKey || e.metaKey) && e.key === '-') {
+          e.preventDefault();
+          this.zoomOut();
+        } else if ((e.ctrlKey || e.metaKey) && e.key === '0') {
+          e.preventDefault();
+          this.resetZoom();
+        } else if (e.key === 'Delete' || e.key === 'Backspace') {
           this.deleteSelected();
         } else if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
           e.preventDefault();
@@ -1069,6 +2275,16 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (e.key === 'ArrowRight') {
           const sel = this.getSelected();
           if (sel) { sel.x += e.shiftKey ? 10 : 1; this.render(); }
+        }
+      });
+
+      window.addEventListener('keyup', (e) => {
+        if (e.code === 'Space') {
+          this.isSpacePressed = false;
+          if (!this.isPanning) {
+            if (canvasViewport) canvasViewport.style.cursor = this.isPanMode ? 'grab' : '';
+            if (canvas) canvas.style.cursor = this.isPanMode ? 'grab' : 'crosshair';
+          }
         }
       });
 
@@ -1120,6 +2336,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     handleMouseDown(e) {
+      if (this.isPanMode || this.isSpacePressed || e.button === 1) {
+        this.isPanning = true;
+        this.panStartX = e.clientX - this.panX;
+        this.panStartY = e.clientY - this.panY;
+        if (canvas) canvas.style.cursor = 'grabbing';
+        if (canvasViewport) canvasViewport.style.cursor = 'grabbing';
+        return;
+      }
+
       const coords = this.getCanvasCoords(e);
       this.dragStartX = coords.x;
       this.dragStartY = coords.y;
@@ -1156,7 +2381,14 @@ document.addEventListener('DOMContentLoaded', () => {
         this.isDragging = true;
         this.initialElementState = { ...hitElement };
       } else {
+        // Clicked on empty canvas!
+        // Deselect, and immediately start panning the canvas so the user can position it easily
         this.selectedId = null;
+        this.isPanning = true;
+        this.panStartX = e.clientX - this.panX;
+        this.panStartY = e.clientY - this.panY;
+        if (canvas) canvas.style.cursor = 'grabbing';
+        if (canvasViewport) canvasViewport.style.cursor = 'grabbing';
       }
 
       this.render();
@@ -1165,11 +2397,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     handleMouseMove(e) {
+      if (this.isPanMode || this.isSpacePressed) {
+        if (canvas) canvas.style.cursor = this.isPanning ? 'grabbing' : 'grab';
+        if (canvasViewport) canvasViewport.style.cursor = this.isPanning ? 'grabbing' : 'grab';
+        return;
+      }
+
       const coords = this.getCanvasCoords(e);
       const sel = this.getSelected();
 
       // Change cursor style based on hover
-      if (!this.isDragging && !this.isResizing && !this.isRotating) {
+      if (!this.isDragging && !this.isResizing && !this.isRotating && !this.isPanning) {
         if (sel) {
           const handle = this.checkHandleHit(sel, coords.x, coords.y);
           if (handle === 'rotate') {
@@ -1188,7 +2426,7 @@ document.addEventListener('DOMContentLoaded', () => {
             break;
           }
         }
-        canvas.style.cursor = isOverObj ? 'move' : 'default';
+        canvas.style.cursor = isOverObj ? 'move' : 'crosshair';
         return;
       }
 
@@ -1406,16 +2644,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     renderLayers() {
+      const active = this.getActiveCanvas();
+      const elements = active ? active.elements : this.elements;
+      const selectedId = active ? active.selectedId : this.selectedId;
+
       layersContainer.innerHTML = '';
-      if (this.elements.length === 0) {
+      if (!elements || elements.length === 0) {
         layersContainer.innerHTML = `<span style="font-size: 0.75rem; color: var(--text-dim);">Nenhuma camada</span>`;
         return;
       }
 
       // Render top-to-bottom
-      [...this.elements].reverse().forEach((el) => {
+      [...elements].reverse().forEach((el) => {
         const item = document.createElement('div');
-        item.className = `layer-item ${el.id === this.selectedId ? 'active' : ''}`;
+        item.className = `layer-item ${el.id === selectedId ? 'active' : ''}`;
 
         let icon = '📝';
         let label = el.text ? el.text.slice(0, 16) : 'Texto';
@@ -1433,6 +2675,7 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
 
         item.addEventListener('click', () => {
+          if (active) active.selectedId = el.id;
           this.selectedId = el.id;
           this.render();
           this.updateInspector();
@@ -1446,29 +2689,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const canvasEngine = new CanvasEngine();
 
-  // Preset Selector change
-  canvasPresetSelect.addEventListener('change', (e) => {
-    const val = e.target.value;
-    if (val === 'custom') {
-      customDimensionsGroup.classList.remove('hidden');
-    } else {
-      customDimensionsGroup.classList.add('hidden');
-      const [w, h] = val.split('x').map(Number);
-      canvasEngine.updateCanvasDimensions(w, h);
-    }
-  });
-
-  applyCustomDimBtn.addEventListener('click', () => {
-    const w = parseInt(customWidthInput.value, 10) || 1280;
-    const h = parseInt(customHeightInput.value, 10) || 720;
-    canvasEngine.updateCanvasDimensions(w, h);
-  });
-
   // Safe zone guide toggle
   toggleSafeZoneBtn.addEventListener('click', () => {
-    canvasEngine.showSafeZone = !canvasEngine.showSafeZone;
-    toggleSafeZoneBtn.classList.toggle('active', canvasEngine.showSafeZone);
-    safeZoneOverlay.classList.toggle('active', canvasEngine.showSafeZone);
+    canvasEngine.toggleSafeZone();
   });
 
   // Undo / Redo buttons
@@ -1477,19 +2700,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Clear Canvas
   clearCanvasBtn.addEventListener('click', () => {
-    if (confirm('Deseja limpar todos os elementos do canvas?')) {
+    const active = canvasEngine.getActiveCanvas();
+    if (!active) return;
+    if (confirm(`Deseja limpar todos os elementos de "${active.name}"?`)) {
+      active.elements = [];
+      active.selectedId = null;
       canvasEngine.elements = [];
       canvasEngine.selectedId = null;
       canvasEngine.saveHistory();
       canvasEngine.render();
       canvasEngine.updateInspector();
       canvasEngine.renderLayers();
-      showToast('Canvas limpo!', 'success');
+      showToast(`${active.name} limpo!`, 'success');
     }
   });
 
+  // Shortcuts Modal listeners
+  if (shortcutsModalBtn) shortcutsModalBtn.addEventListener('click', openShortcutsModal);
+  if (floatingShortcutsBtn) floatingShortcutsBtn.addEventListener('click', openShortcutsModal);
+  if (closeShortcutsModalBtn) closeShortcutsModalBtn.addEventListener('click', closeShortcutsModal);
+  if (dismissShortcutsBtn) dismissShortcutsBtn.addEventListener('click', closeShortcutsModal);
+  if (shortcutsModal) {
+    shortcutsModal.addEventListener('click', (e) => {
+      if (e.target === shortcutsModal) closeShortcutsModal();
+    });
+  }
+
   // Left Tool: Add Text
   toolAddText.addEventListener('click', () => {
+    canvasEngine.setPanMode(false);
+    const active = canvasEngine.getActiveCanvas();
+    const w = active ? active.width : canvasEngine.width;
+    const h = active ? active.height : canvasEngine.height;
     canvasEngine.addElement({
       type: 'text',
       text: 'TEXTO DE IMPACTO',
@@ -1509,15 +2751,18 @@ document.addEventListener('DOMContentLoaded', () => {
       bgColor: '#dc2626',
       bgRadius: 8,
       bgPadding: 14,
-      x: canvasEngine.width / 2,
-      y: canvasEngine.height / 2,
+      x: Math.round(w / 2),
+      y: Math.round(h / 2),
       rotation: 0,
       opacity: 1
     });
   });
 
   // Left Tool: Upload Image
-  toolUploadImage.addEventListener('click', () => imageFileInput.click());
+  toolUploadImage.addEventListener('click', () => {
+    canvasEngine.setPanMode(false);
+    imageFileInput.click();
+  });
   imageFileInput.addEventListener('change', (e) => {
     if (e.target.files && e.target.files[0]) {
       const reader = new FileReader();
@@ -1531,6 +2776,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Left Tool: Add Badge / Shape
   toolAddBadge.addEventListener('click', () => {
+    canvasEngine.setPanMode(false);
+    const active = canvasEngine.getActiveCanvas();
+    const w = active ? active.width : canvasEngine.width;
+    const h = active ? active.height : canvasEngine.height;
     canvasEngine.addElement({
       type: 'shape',
       color: '#ff5722',
@@ -1538,8 +2787,8 @@ document.addEventListener('DOMContentLoaded', () => {
       height: 90,
       borderRadius: 14,
       opacity: 1,
-      x: canvasEngine.width / 2,
-      y: canvasEngine.height / 2,
+      x: Math.round(w / 2),
+      y: Math.round(h / 2),
       rotation: 0
     });
   });
@@ -1548,6 +2797,8 @@ document.addEventListener('DOMContentLoaded', () => {
   swatchBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       const color = btn.getAttribute('data-color');
+      const active = canvasEngine.getActiveCanvas();
+      if (active) active.bgColor = color;
       canvasEngine.bgColor = color;
       canvasBgColorInput.value = color;
       canvasEngine.saveHistory();
@@ -1556,6 +2807,8 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   canvasBgColorInput.addEventListener('input', (e) => {
+    const active = canvasEngine.getActiveCanvas();
+    if (active) active.bgColor = e.target.value;
     canvasEngine.bgColor = e.target.value;
     canvasEngine.render();
   });
@@ -1915,41 +3168,49 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // EXPORT ACTIONS
   function getCleanCanvasDataUrl(format = 'image/png', quality = 0.95) {
+    const active = canvasEngine.getActiveCanvas();
+    const targetCanvas = active ? active.canvasEl : canvas;
     // Render cleanly without bounding boxes
-    canvasEngine.render(true);
-    const dataUrl = canvas.toDataURL(format, quality);
+    canvasEngine.render(canvasEngine.activeCanvasId, true);
+    const dataUrl = targetCanvas.toDataURL(format, quality);
     // Restore selection box
-    canvasEngine.render(false);
+    canvasEngine.render(canvasEngine.activeCanvasId, false);
     return dataUrl;
   }
 
   exportPngBtn.addEventListener('click', () => {
+    const active = canvasEngine.getActiveCanvas();
     const dataUrl = getCleanCanvasDataUrl('image/png');
     const a = document.createElement('a');
     a.href = dataUrl;
-    a.download = `thumbnail_yt_${canvasEngine.width}x${canvasEngine.height}_${Date.now()}.png`;
+    const namePrefix = active ? active.name.toLowerCase().replace(/\s+/g, '_') : 'thumbnail';
+    a.download = `${namePrefix}_${canvasEngine.width}x${canvasEngine.height}_${Date.now()}.png`;
     document.body.appendChild(a);
     a.click();
     a.remove();
-    showToast('Thumbnail PNG baixada em alta resolução!', 'success');
+    showToast('Imagem PNG baixada em alta resolução!', 'success');
   });
 
   exportJpgBtn.addEventListener('click', () => {
+    const active = canvasEngine.getActiveCanvas();
     const dataUrl = getCleanCanvasDataUrl('image/jpeg', 0.92);
     const a = document.createElement('a');
     a.href = dataUrl;
-    a.download = `thumbnail_yt_${canvasEngine.width}x${canvasEngine.height}_${Date.now()}.jpg`;
+    const namePrefix = active ? active.name.toLowerCase().replace(/\s+/g, '_') : 'thumbnail';
+    a.download = `${namePrefix}_${canvasEngine.width}x${canvasEngine.height}_${Date.now()}.jpg`;
     document.body.appendChild(a);
     a.click();
     a.remove();
-    showToast('Thumbnail JPG baixada com sucesso!', 'success');
+    showToast('Imagem JPG baixada com sucesso!', 'success');
   });
 
   copyImageBtn.addEventListener('click', async () => {
     try {
-      canvasEngine.render(true);
-      canvas.toBlob(async (blob) => {
-        canvasEngine.render(false);
+      const active = canvasEngine.getActiveCanvas();
+      const targetCanvas = active ? active.canvasEl : canvas;
+      canvasEngine.render(canvasEngine.activeCanvasId, true);
+      targetCanvas.toBlob(async (blob) => {
+        canvasEngine.render(canvasEngine.activeCanvasId, false);
         if (!blob) {
           showToast('Erro ao gerar imagem.', 'error');
           return;

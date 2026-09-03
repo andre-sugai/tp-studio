@@ -35,10 +35,18 @@ npx netlify-cli deploy --prod --dir=.
 
 ## 🛠️ Recursos Incluídos
 - **Templates de Texto:** Criar, editar, buscar por categorias (*YouTube, Blog, Afiliados, Geral*), copiar com 1 clique e importar/exportar backup em JSON.
+- **Acesso Rápido (Sites & Ferramentas):**
+  - Salve sites, ferramentas e canais favoritos com captura automática de favicon.
+  - Botão de abrir em nova aba (`target="_blank"`) e copiar link com 1 clique.
+  - Filtros dinâmicos por categoria (*YouTube, Ferramentas, IA, Design, Geral*) e busca em tempo real.
+  - Importação e exportação de backups em JSON.
 - **Criador de Thumbnails & Imagens:**
-  - Presets de tamanho (*1280×720 YouTube, 1080p, Shorts/Reels 9:16, Banner 2560×1440, Personalizado*).
+  - **Aba de Tamanhos Anexada ao Canvas:** Dropdown com presets (*1280×720 YouTube, 1080p, Shorts/Reels 9:16, Banner 2560×1440, Personalizado*) anexado como uma aba diretamente no topo da prancheta de trabalho, acompanhando zoom, deslocamentos e redimensionando a arte em tempo real.
   - Tipografia de alto impacto (*Bebas Neue, Anton, Montserrat, etc.*) com contorno (*stroke*), sombras e tarjas.
   - Imagens com colagem direta via **Ctrl+V / Cmd+V**, espelhamento e controle de camadas.
   - Guia da **Safe Zone do YouTube** (evita cobrir o selo de duração).
+  - **Zoom Fluído & Pan da Área de Trabalho:** Zoom pelo scroll do mouse ou botões flutuantes, e navegação livre pela prancheta (arraste pelo fundo, ferramenta mão `H` ou segurando `Espaço`).
+  - **Modal de Atalhos Rápidos:** Visualizador completo de atalhos de teclado e gestos disponível via botão ou pela tecla `?`.
   - Exportação em PNG de alta definição, JPG otimizado e botão de copiar imagem para a Área de Transferência.
-- **Armazenamento Local:** 100% no navegador via `localStorage` (seus templates ficam salvos sem depender de servidores).
+- **Barra Lateral Retrátil e Fluída:** Recolhimento/expansão animada via botão ou atalho `Ctrl+B` com persistência no navegador.
+- **Armazenamento Local:** 100% no navegador via `localStorage` (seus dados ficam salvos sem depender de servidores).
