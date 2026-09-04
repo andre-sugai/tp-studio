@@ -221,9 +221,9 @@ document.addEventListener('DOMContentLoaded', () => {
   function loadTemplates() {
     try {
       const localData = localStorage.getItem(TEMPLATES_STORAGE_KEY);
-      if (localData) {
+      if (localData !== null) {
         const parsed = JSON.parse(localData);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed)) {
           templates = parsed;
         } else {
           templates = [...defaultTemplates];
@@ -249,8 +249,49 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Render dynamic category pills for templates
+  function renderCategoryPills() {
+    if (!categoryPills) return;
+
+    // Collect all unique categories from current templates
+    const categoriesMap = new Map();
+    templates.forEach(t => {
+      const raw = (t.category || '').trim();
+      if (raw) {
+        const key = raw.toLowerCase();
+        if (!categoriesMap.has(key)) {
+          categoriesMap.set(key, raw);
+        }
+      }
+    });
+
+    const categories = Array.from(categoriesMap.values()).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+
+    // Reset filter if selected category no longer exists
+    if (currentCategoryFilter !== 'all') {
+      const exists = categories.some(c => c.toLowerCase() === currentCategoryFilter.toLowerCase());
+      if (!exists) {
+        currentCategoryFilter = 'all';
+      }
+    }
+
+    let html = `<button class="pill ${currentCategoryFilter === 'all' ? 'active' : ''}" data-category="all">Todos</button>`;
+    categories.forEach(cat => {
+      const isActive = currentCategoryFilter.toLowerCase() === cat.toLowerCase();
+      html += `<button class="pill ${isActive ? 'active' : ''}" data-category="${escapeHtml(cat)}">${escapeHtml(cat)}</button>`;
+    });
+
+    categoryPills.innerHTML = html;
+
+    const datalist = document.getElementById('categoryOptions');
+    if (datalist) {
+      datalist.innerHTML = categories.map(cat => `<option value="${escapeHtml(cat)}">`).join('');
+    }
+  }
+
   // Render templates grid
   function renderTemplates() {
+    renderCategoryPills();
     templatesGrid.innerHTML = '';
 
     const filtered = templates.filter(tpl => {
@@ -463,9 +504,7 @@ document.addEventListener('DOMContentLoaded', () => {
     categoryPills.addEventListener('click', (e) => {
       const pill = e.target.closest('.pill');
       if (!pill) return;
-      categoryPills.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
-      pill.classList.add('active');
-      currentCategoryFilter = pill.getAttribute('data-category');
+      currentCategoryFilter = pill.getAttribute('data-category') || 'all';
       renderTemplates();
     });
   }
@@ -622,9 +661,9 @@ document.addEventListener('DOMContentLoaded', () => {
   function loadQuickLinks() {
     try {
       const localData = localStorage.getItem(LINKS_STORAGE_KEY);
-      if (localData) {
+      if (localData !== null) {
         const parsed = JSON.parse(localData);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed)) {
           quickLinks = parsed;
         } else {
           quickLinks = [...defaultQuickLinks];
@@ -650,9 +689,48 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Render dynamic category pills for quick links
+  function renderLinkCategoryPills() {
+    if (!linkCategoryPills) return;
+
+    const categoriesMap = new Map();
+    quickLinks.forEach(item => {
+      const raw = (item.category || '').trim();
+      if (raw) {
+        const key = raw.toLowerCase();
+        if (!categoriesMap.has(key)) {
+          categoriesMap.set(key, raw);
+        }
+      }
+    });
+
+    const categories = Array.from(categoriesMap.values()).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+
+    if (currentLinkCategory !== 'all') {
+      const exists = categories.some(c => c.toLowerCase() === currentLinkCategory.toLowerCase());
+      if (!exists) {
+        currentLinkCategory = 'all';
+      }
+    }
+
+    let html = `<button class="pill ${currentLinkCategory === 'all' ? 'active' : ''}" data-category="all">Todos</button>`;
+    categories.forEach(cat => {
+      const isActive = currentLinkCategory.toLowerCase() === cat.toLowerCase();
+      html += `<button class="pill ${isActive ? 'active' : ''}" data-category="${escapeHtml(cat)}">${escapeHtml(cat)}</button>`;
+    });
+
+    linkCategoryPills.innerHTML = html;
+
+    const datalist = document.getElementById('linkCategoryOptions');
+    if (datalist) {
+      datalist.innerHTML = categories.map(cat => `<option value="${escapeHtml(cat)}">`).join('');
+    }
+  }
+
   // Render Quick Links
   function renderQuickLinks() {
     if (!linksGrid) return;
+    renderLinkCategoryPills();
     linksGrid.innerHTML = '';
 
     const filtered = quickLinks.filter(item => {
@@ -880,9 +958,7 @@ document.addEventListener('DOMContentLoaded', () => {
     linkCategoryPills.addEventListener('click', (e) => {
       const pill = e.target.closest('.pill');
       if (!pill) return;
-      linkCategoryPills.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
-      pill.classList.add('active');
-      currentLinkCategory = pill.getAttribute('data-category');
+      currentLinkCategory = pill.getAttribute('data-category') || 'all';
       renderQuickLinks();
     });
   }
