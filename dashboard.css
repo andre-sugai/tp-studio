@@ -1344,21 +1344,9 @@ body {
   color: #ef4444;
 }
 
-/* Canvas Sync / Link Button */
+/* Canvas Sync / Link Button (Deprecated - removed from header tab) */
 .canvas-sync-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  color: var(--text-muted);
-  font-size: 0.73rem;
-  font-weight: 600;
-  padding: 3px 8px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
+  display: none !important;
 }
 
 .canvas-sync-btn:hover {
@@ -1540,11 +1528,42 @@ body {
   transition: box-shadow 0.15s ease, outline-color 0.15s ease;
 }
 
+/* Canvas Connector Dot (Bolinha branca para conectar a outro canvas) */
+.canvas-connector-dot {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2.5px solid #00f0ff;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.85), 0 2px 6px rgba(0, 0, 0, 0.6);
+  cursor: crosshair;
+  z-index: 35;
+  opacity: 0;
+  pointer-events: none;
+  padding: 0;
+  outline: none;
+  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+}
+
+.canvas-board:hover .canvas-connector-dot,
+.canvas-board.active .canvas-connector-dot {
+  opacity: 0.95;
+  pointer-events: auto;
+}
+
+.canvas-connector-dot:hover,
+.canvas-connector-dot.dragging {
+  opacity: 1 !important;
+  box-shadow: 0 0 16px #00f0ff, 0 0 26px rgba(6, 182, 212, 0.95);
+  background: #ffffff;
+}
+
 /* FigJam-style 4 Connector / Add Buttons */
 .figjam-add-btn {
   position: absolute;
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   background: #0f172a;
   border: 2px solid #3b82f6;
@@ -1561,28 +1580,80 @@ body {
   z-index: 30;
 }
 
+/* Top Edge: dot on border, + button above it */
+.canvas-connector-dot.dot-top {
+  top: -8px;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+.canvas-connector-dot.dot-top:hover,
+.canvas-connector-dot.dot-top.dragging {
+  transform: translate(-50%, -50%) scale(1.35) !important;
+}
 .figjam-add-btn.add-top {
-  top: -18px;
+  top: -34px;
   left: 50%;
   transform: translate(-50%, -50%) scale(0.85);
 }
+.figjam-add-btn.add-top:hover {
+  transform: translate(-50%, -50%) scale(1.15);
+}
 
+/* Right Edge: dot on border, + button right next to it */
+.canvas-connector-dot.dot-right {
+  right: -8px;
+  top: 50%;
+  transform: translate(50%, -50%);
+}
+.canvas-connector-dot.dot-right:hover,
+.canvas-connector-dot.dot-right.dragging {
+  transform: translate(50%, -50%) scale(1.35) !important;
+}
 .figjam-add-btn.add-right {
-  right: -18px;
+  right: -34px;
   top: 50%;
   transform: translate(50%, -50%) scale(0.85);
 }
+.figjam-add-btn.add-right:hover {
+  transform: translate(50%, -50%) scale(1.15);
+}
 
+/* Bottom Edge: dot on border, + button below it */
+.canvas-connector-dot.dot-bottom {
+  bottom: -8px;
+  left: 50%;
+  transform: translate(-50%, 50%);
+}
+.canvas-connector-dot.dot-bottom:hover,
+.canvas-connector-dot.dot-bottom.dragging {
+  transform: translate(-50%, 50%) scale(1.35) !important;
+}
 .figjam-add-btn.add-bottom {
-  bottom: -18px;
+  bottom: -34px;
   left: 50%;
   transform: translate(-50%, 50%) scale(0.85);
 }
+.figjam-add-btn.add-bottom:hover {
+  transform: translate(-50%, 50%) scale(1.15);
+}
 
+/* Left Edge: dot on border, + button right next to it */
+.canvas-connector-dot.dot-left {
+  left: -8px;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+.canvas-connector-dot.dot-left:hover,
+.canvas-connector-dot.dot-left.dragging {
+  transform: translate(-50%, -50%) scale(1.35) !important;
+}
 .figjam-add-btn.add-left {
-  left: -18px;
+  left: -34px;
   top: 50%;
   transform: translate(-50%, -50%) scale(0.85);
+}
+.figjam-add-btn.add-left:hover {
+  transform: translate(-50%, -50%) scale(1.15);
 }
 
 /* Reveal FigJam buttons on hover or when canvas is active */
@@ -1597,22 +1668,6 @@ body {
   background: #3b82f6;
   color: #ffffff;
   box-shadow: 0 6px 22px rgba(59, 130, 246, 0.7), 0 0 0 4px rgba(59, 130, 246, 0.4);
-}
-
-.figjam-add-btn.add-top:hover {
-  transform: translate(-50%, -50%) scale(1.25);
-}
-
-.figjam-add-btn.add-right:hover {
-  transform: translate(50%, -50%) scale(1.25);
-}
-
-.figjam-add-btn.add-bottom:hover {
-  transform: translate(-50%, 50%) scale(1.25);
-}
-
-.figjam-add-btn.add-left:hover {
-  transform: translate(-50%, -50%) scale(1.25);
 }
 
 /* Center Canvas Viewport */
@@ -1630,12 +1685,24 @@ body {
 .canvas-container {
   position: relative;
   border-radius: 0 6px 6px 6px;
-  overflow: hidden;
+  overflow: visible; /* Allows resize handles and bounding box to extend outside canvas */
   user-select: none;
   display: flex;
   align-items: center;
   justify-content: center;
+  background-color: transparent;
+}
+
+.canvas-artboard-viewport {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 0 6px 6px 6px;
+  overflow: hidden; /* Strictly clips image, text, shapes and video badge to canvas boundary */
   background-color: #0f172a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .artboard-canvas {
@@ -1643,6 +1710,21 @@ body {
   width: 100%;
   height: 100%;
   cursor: crosshair;
+}
+
+.canvas-transform-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible !important;
+  pointer-events: none;
+  z-index: 25;
+}
+
+.canvas-transform-overlay .transform-handle-group {
+  pointer-events: all;
 }
 
 /* Safe Zone Overlay */

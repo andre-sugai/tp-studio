@@ -1099,6 +1099,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const propImgShadowBlurVal = document.getElementById('propImgShadowBlurVal');
   const btnFlipH = document.getElementById('btnFlipH');
   const btnFitCanvas = document.getElementById('btnFitCanvas');
+  const btnResetAspect = document.getElementById('btnResetAspect');
 
   // Shape Inspector Fields
   const propShapeColor = document.getElementById('propShapeColor');
@@ -1216,16 +1217,23 @@ document.addEventListener('DOMContentLoaded', () => {
       boardEl.style.top = `${y}px`;
 
       boardEl.innerHTML = `
-        <!-- FigJam-style 4 Add Buttons -->
+        <!-- FigJam-style 4 Add Buttons & Connection Dots -->
+        <button class="canvas-connector-dot dot-top" data-dir="top" data-canvas-id="${id}" title="Arraste para conectar a outro canvas"></button>
         <button class="figjam-add-btn add-top" data-dir="top" title="Criar novo canvas acima">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         </button>
+
+        <button class="canvas-connector-dot dot-right" data-dir="right" data-canvas-id="${id}" title="Arraste para conectar a outro canvas"></button>
         <button class="figjam-add-btn add-right" data-dir="right" title="Criar novo canvas à direita">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         </button>
+
+        <button class="canvas-connector-dot dot-bottom" data-dir="bottom" data-canvas-id="${id}" title="Arraste para conectar a outro canvas"></button>
         <button class="figjam-add-btn add-bottom" data-dir="bottom" title="Criar novo canvas abaixo">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         </button>
+
+        <button class="canvas-connector-dot dot-left" data-dir="left" data-canvas-id="${id}" title="Arraste para conectar a outro canvas"></button>
         <button class="figjam-add-btn add-left" data-dir="left" title="Criar novo canvas à esquerda">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         </button>
@@ -1255,15 +1263,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
           <span class="canvas-tab-badge">${w} × ${h} px</span>
 
-          <button class="canvas-sync-btn" title="Conectar este canvas para sincronizar edições em tempo real">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-            <span class="sync-label">Conectar</span>
-          </button>
-
-          <button class="canvas-connector-pin" title="Puxe e solte sobre outro canvas para conectar" data-canvas-id="${id}">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v4"/><path d="M12 18v4"/><path d="M2 12h4"/><path d="M18 12h4"/></svg>
-          </button>
-
           <button class="canvas-close-btn" title="Excluir este canvas" style="display: none;">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
@@ -1271,10 +1270,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         <!-- Canvas Container -->
         <div class="canvas-container" style="width: ${renderedW}px; height: ${renderedH}px; aspect-ratio: ${w}/${h};">
-          <canvas class="artboard-canvas" width="${w}" height="${h}"></canvas>
-          <div class="safe-zone-overlay ${preset === '1280x720' || preset === '1920x1080' ? 'active' : ''}">
-            <div class="yt-time-badge-mock">00:00</div>
+          <div class="canvas-artboard-viewport">
+            <canvas class="artboard-canvas" width="${w}" height="${h}"></canvas>
+            <div class="safe-zone-overlay ${preset === '1280x720' || preset === '1920x1080' ? 'active' : ''}">
+              <div class="yt-time-badge-mock">00:00</div>
+            </div>
           </div>
+          <svg class="canvas-transform-overlay" viewBox="0 0 ${w} ${h}"></svg>
         </div>
       `;
 
@@ -1282,6 +1284,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const canvasEl = boardEl.querySelector('.artboard-canvas');
       const containerEl = boardEl.querySelector('.canvas-container');
+      const transformOverlaySvg = boardEl.querySelector('.canvas-transform-overlay');
       const attachedTab = boardEl.querySelector('.canvas-attached-tab');
       const presetSelect = boardEl.querySelector('.preset-select');
       const customGroup = boardEl.querySelector('.custom-dims-group');
@@ -1289,8 +1292,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const customHeightInput = boardEl.querySelector('.custom-height-input');
       const applyCustomBtn = boardEl.querySelector('.apply-custom-btn');
       const badgeEl = boardEl.querySelector('.canvas-tab-badge');
-      const syncBtn = boardEl.querySelector('.canvas-sync-btn');
-      const connectorPin = boardEl.querySelector('.canvas-connector-pin');
       const closeBtn = boardEl.querySelector('.canvas-close-btn');
       const safeZoneOverlay = boardEl.querySelector('.safe-zone-overlay');
 
@@ -1312,30 +1313,25 @@ document.addEventListener('DOMContentLoaded', () => {
         boardEl,
         containerEl,
         canvasEl,
+        transformOverlaySvg,
         ctx: canvasEl.getContext('2d'),
         presetSelect,
         customGroup,
         customWidthInput,
         customHeightInput,
         badgeEl,
-        syncBtn,
-        connectorPin,
         closeBtn,
         safeZoneOverlay
       };
 
       attachedTab.addEventListener('mousedown', (e) => e.stopPropagation());
 
-      syncBtn.addEventListener('mousedown', (e) => e.stopPropagation());
-      syncBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.toggleCanvasLink(id);
-      });
-
-      connectorPin.addEventListener('mousedown', (e) => {
-        e.stopPropagation();
-        e.preventDefault();
-        this.startWireDrag(id, e);
+      boardEl.querySelectorAll('.canvas-connector-dot').forEach(dot => {
+        dot.addEventListener('mousedown', (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          this.startWireDrag(id, e, dot.dataset.dir);
+        });
       });
 
       boardEl.querySelectorAll('.figjam-add-btn').forEach(btn => {
@@ -1444,23 +1440,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     updateSyncButtonUI(c) {
-      if (!c || !c.syncBtn) return;
-      if (c.isLinked) {
-        c.syncBtn.classList.add('connected');
-        c.syncBtn.innerHTML = `
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-          <span class="sync-label">Conectado</span>
-        `;
-        c.syncBtn.title = 'Canvas conectado! Clique para desconectar';
-        c.boardEl.classList.add('synced-board');
-      } else {
-        c.syncBtn.classList.remove('connected');
-        c.syncBtn.innerHTML = `
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-          <span class="sync-label">Conectar</span>
-        `;
-        c.syncBtn.title = 'Conectar este canvas para sincronizar edições em tempo real';
-        c.boardEl.classList.remove('synced-board');
+      if (!c) return;
+      if (c.boardEl) {
+        c.boardEl.classList.toggle('synced-board', Boolean(c.isLinked));
+      }
+      if (c.syncBtn) {
+        c.syncBtn.classList.toggle('connected', Boolean(c.isLinked));
       }
     }
 
@@ -1529,7 +1514,7 @@ document.addEventListener('DOMContentLoaded', () => {
       target.elements = source.elements.map(el => {
         const normX = el.x / source.width;
         const normY = el.y / source.height;
-        const scale = Math.min(target.width / source.width, target.height / source.height);
+        const scale = Math.min(target.width, target.height) / Math.min(source.width, source.height);
 
         const clone = { ...el };
         clone.id = 'el_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
@@ -1541,9 +1526,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (clone.type === 'text') {
           clone.fontSize = Math.max(14, Math.round(el.fontSize * scale));
-        } else if (clone.type === 'image' || clone.type === 'shape') {
+        } else if (clone.type === 'shape') {
           clone.width = Math.max(20, Math.round(el.width * scale));
           clone.height = Math.max(20, Math.round(el.height * scale));
+        } else if (clone.type === 'image') {
+          const origRatio = (el.origWidth && el.origHeight)
+            ? (el.origWidth / el.origHeight)
+            : (el.img && el.img.naturalWidth && el.img.naturalHeight)
+              ? (el.img.naturalWidth / el.img.naturalHeight)
+              : (el.width / el.height);
+
+          const wasCovering = (el.width >= source.width * 0.9) && (el.height >= source.height * 0.9);
+          if (wasCovering) {
+            const baseW = el.origWidth || (el.img && el.img.naturalWidth) || el.width;
+            const baseH = Math.round(baseW / origRatio);
+            const coverScale = Math.max(target.width / baseW, target.height / baseH);
+            clone.width = Math.round(baseW * coverScale);
+            clone.height = Math.round(clone.width / origRatio);
+            clone.x = Math.round(target.width / 2);
+            clone.y = Math.round(target.height / 2);
+          } else {
+            clone.width = Math.max(20, Math.round(el.width * scale));
+            clone.height = Math.max(20, Math.round(clone.width / origRatio));
+          }
         }
 
         if (clone.type === 'image' && el.src) {
@@ -1587,12 +1592,20 @@ document.addEventListener('DOMContentLoaded', () => {
         targetEl.x = Math.round(normX * target.width);
         targetEl.y = Math.round(normY * target.height);
 
-        const scale = Math.min(target.width / sourceCanvas.width, target.height / sourceCanvas.height);
+        const scale = Math.min(target.width, target.height) / Math.min(sourceCanvas.width, sourceCanvas.height);
         if (sourceEl.type === 'text') {
           targetEl.fontSize = Math.max(14, Math.round(sourceEl.fontSize * scale));
-        } else if (sourceEl.type === 'image' || sourceEl.type === 'shape') {
+        } else if (sourceEl.type === 'shape') {
           targetEl.width = Math.max(20, Math.round(sourceEl.width * scale));
           targetEl.height = Math.max(20, Math.round(sourceEl.height * scale));
+        } else if (sourceEl.type === 'image') {
+          const origRatio = (sourceEl.origWidth && sourceEl.origHeight)
+            ? (sourceEl.origWidth / sourceEl.origHeight)
+            : (sourceEl.img && sourceEl.img.naturalWidth && sourceEl.img.naturalHeight)
+              ? (sourceEl.img.naturalWidth / sourceEl.img.naturalHeight)
+              : (sourceEl.width / sourceEl.height);
+          targetEl.width = Math.max(20, Math.round(sourceEl.width * scale));
+          targetEl.height = Math.max(20, Math.round(targetEl.width / origRatio));
         }
 
         this.render(target.id);
@@ -1615,8 +1628,13 @@ document.addEventListener('DOMContentLoaded', () => {
       };
     }
 
-    getCanvasAnchorPoint(c, towardsPoint = null) {
+    getCanvasAnchorPoint(c, towardsPoint = null, fixedDir = null) {
       const b = this.getBoardBounds(c);
+      if (fixedDir === 'right') return { x: b.right, y: b.cy };
+      if (fixedDir === 'left') return { x: b.x, y: b.cy };
+      if (fixedDir === 'top') return { x: b.cx, y: b.y };
+      if (fixedDir === 'bottom') return { x: b.cx, y: b.bottom };
+
       if (!towardsPoint) {
         return { x: b.right, y: b.cy };
       }
@@ -1715,7 +1733,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (this.isDraggingWire && dragPoint && this.wireSourceId) {
         const source = this.canvases.find(c => c.id === this.wireSourceId);
         if (source) {
-          const p1 = this.getCanvasAnchorPoint(source, dragPoint);
+          const p1 = this.getCanvasAnchorPoint(source, dragPoint, this.wireStartDir);
           const pathD = this.createBezierPath(p1, dragPoint);
 
           svgHtml += `
@@ -1758,16 +1776,18 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    startWireDrag(sourceCanvasId, e) {
+    startWireDrag(sourceCanvasId, e, startDir = null) {
       const source = this.canvases.find(c => c.id === sourceCanvasId);
       if (!source) return;
 
       this.isDraggingWire = true;
       this.wireSourceId = sourceCanvasId;
+      this.wireStartDir = startDir;
       this.hoveredDropCanvasId = null;
 
-      if (source.connectorPin) {
-        source.connectorPin.classList.add('dragging');
+      if (source.boardEl && startDir) {
+        const dot = source.boardEl.querySelector(`.canvas-connector-dot.dot-${startDir}`);
+        if (dot) dot.classList.add('dragging');
       }
 
       const coords = this.clientToWorkspaceCoords(e.clientX, e.clientY);
@@ -1791,7 +1811,7 @@ document.addEventListener('DOMContentLoaded', () => {
       };
     }
 
-    checkOverlap(b1, b2, gap = 80) {
+    checkOverlap(b1, b2, gap = 140) {
       return (
         b1.x < b2.right + gap &&
         b1.right + gap > b2.x &&
@@ -1801,7 +1821,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     resolveCollisions(priorityCanvasId = null) {
-      const GAP = 80;
+      const GAP = 140;
       let changed = true;
       let iterations = 0;
       const maxIterations = 35;
@@ -1885,7 +1905,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!source) return;
 
       const DISPLAY_SCALE = 0.55;
-      const GAP = 80;
+      const GAP = 140; // 80 + 60px distance increase
 
       const preset = source.preset || '1280x720';
       const w = source.width;
@@ -2063,6 +2083,9 @@ document.addEventListener('DOMContentLoaded', () => {
       c.height = newH;
       c.canvasEl.width = w;
       c.canvasEl.height = newH;
+      if (c.transformOverlaySvg) {
+        c.transformOverlaySvg.setAttribute('viewBox', `0 0 ${w} ${newH}`);
+      }
 
       const DISPLAY_SCALE = 0.55;
       const renderedW = Math.round(w * DISPLAY_SCALE);
@@ -2086,17 +2109,79 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       if (shouldReposition && (oldW !== w || oldH !== newH) && c.elements.length > 0) {
+        const linkedSource = c.isLinked ? this.canvases.find(item => item.id !== c.id && item.isLinked && item.elements.length > 0) : null;
+
         const scaleX = w / oldW;
         const scaleY = newH / oldH;
+        const uniformScale = Math.min(w, newH) / Math.min(oldW, oldH);
+
         c.elements.forEach(el => {
-          el.x = Math.round(el.x * scaleX);
-          el.y = Math.round(el.y * scaleY);
-          if (el.type === 'shape' || el.type === 'image') {
-            el.width = Math.round(el.width * scaleX);
-            el.height = Math.round(el.height * scaleY);
-          } else if (el.type === 'text') {
-            const fontScale = (scaleX + scaleY) / 2;
-            el.fontSize = Math.max(16, Math.round(el.fontSize * fontScale));
+          const sourceEl = linkedSource ? linkedSource.elements.find(item => item.syncId === el.syncId) : null;
+
+          if (sourceEl) {
+            const normX = sourceEl.x / linkedSource.width;
+            const normY = sourceEl.y / linkedSource.height;
+            el.x = Math.round(normX * w);
+            el.y = Math.round(normY * newH);
+
+            const scale = Math.min(w, newH) / Math.min(linkedSource.width, linkedSource.height);
+
+            if (el.type === 'text') {
+              el.fontSize = Math.max(14, Math.round(sourceEl.fontSize * scale));
+            } else if (el.type === 'shape') {
+              el.width = Math.max(20, Math.round(sourceEl.width * scale));
+              el.height = Math.max(20, Math.round(sourceEl.height * scale));
+            } else if (el.type === 'image') {
+              const origRatio = (sourceEl.origWidth && sourceEl.origHeight)
+                ? (sourceEl.origWidth / sourceEl.origHeight)
+                : (sourceEl.img && sourceEl.img.naturalWidth && sourceEl.img.naturalHeight)
+                  ? (sourceEl.img.naturalWidth / sourceEl.img.naturalHeight)
+                  : (sourceEl.width / sourceEl.height);
+
+              const wasCovering = (sourceEl.width >= linkedSource.width * 0.9) && (sourceEl.height >= linkedSource.height * 0.9);
+              if (wasCovering) {
+                const baseW = sourceEl.origWidth || (sourceEl.img && sourceEl.img.naturalWidth) || sourceEl.width;
+                const baseH = Math.round(baseW / origRatio);
+                const coverScale = Math.max(w / baseW, newH / baseH);
+                el.width = Math.round(baseW * coverScale);
+                el.height = Math.round(el.width / origRatio);
+                el.x = Math.round(w / 2);
+                el.y = Math.round(newH / 2);
+              } else {
+                el.width = Math.max(20, Math.round(sourceEl.width * scale));
+                el.height = Math.max(20, Math.round(el.width / origRatio));
+              }
+            }
+          } else {
+            el.x = Math.round(el.x * scaleX);
+            el.y = Math.round(el.y * scaleY);
+
+            if (el.type === 'text') {
+              el.fontSize = Math.max(14, Math.round(el.fontSize * uniformScale));
+            } else if (el.type === 'shape') {
+              el.width = Math.max(20, Math.round(el.width * uniformScale));
+              el.height = Math.max(20, Math.round(el.height * uniformScale));
+            } else if (el.type === 'image') {
+              const origRatio = (el.origWidth && el.origHeight)
+                ? (el.origWidth / el.origHeight)
+                : (el.img && el.img.naturalWidth && el.img.naturalHeight)
+                  ? (el.img.naturalWidth / el.img.naturalHeight)
+                  : (el.width / el.height);
+
+              const wasCovering = (el.width >= oldW * 0.9) && (el.height >= oldH * 0.9);
+              if (wasCovering) {
+                const baseW = el.origWidth || (el.img && el.img.naturalWidth) || el.width;
+                const baseH = Math.round(baseW / origRatio);
+                const coverScale = Math.max(w / baseW, newH / baseH);
+                el.width = Math.round(baseW * coverScale);
+                el.height = Math.round(el.width / origRatio);
+                el.x = Math.round(w / 2);
+                el.y = Math.round(newH / 2);
+              } else {
+                el.width = Math.max(20, Math.round(el.width * uniformScale));
+                el.height = Math.max(20, Math.round(el.width / origRatio));
+              }
+            }
           }
         });
       }
@@ -2226,6 +2311,9 @@ document.addEventListener('DOMContentLoaded', () => {
       active.preset = data.preset || '1280x720';
       active.canvasEl.width = data.width;
       active.canvasEl.height = data.height;
+      if (active.transformOverlaySvg) {
+        active.transformOverlaySvg.setAttribute('viewBox', `0 0 ${data.width} ${data.height}`);
+      }
 
       const DISPLAY_SCALE = 0.55;
       active.containerEl.style.width = `${Math.round(data.width * DISPLAY_SCALE)}px`;
@@ -2291,7 +2379,7 @@ document.addEventListener('DOMContentLoaded', () => {
         linked.forEach(target => {
           const normX = el.x / active.width;
           const normY = el.y / active.height;
-          const scale = Math.min(target.width / active.width, target.height / active.height);
+          const scale = Math.min(target.width, target.height) / Math.min(active.width, active.height);
 
           const syncedEl = { ...el };
           syncedEl.id = 'el_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
@@ -2301,9 +2389,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
           if (syncedEl.type === 'text') {
             syncedEl.fontSize = Math.max(14, Math.round(el.fontSize * scale));
-          } else if (syncedEl.type === 'image' || syncedEl.type === 'shape') {
+          } else if (syncedEl.type === 'shape') {
             syncedEl.width = Math.max(20, Math.round(el.width * scale));
             syncedEl.height = Math.max(20, Math.round(el.height * scale));
+          } else if (syncedEl.type === 'image') {
+            const origRatio = (el.origWidth && el.origHeight)
+              ? (el.origWidth / el.origHeight)
+              : (el.img && el.img.naturalWidth && el.img.naturalHeight)
+                ? (el.img.naturalWidth / el.img.naturalHeight)
+                : (el.width / el.height);
+            syncedEl.width = Math.max(20, Math.round(el.width * scale));
+            syncedEl.height = Math.max(20, Math.round(syncedEl.width / origRatio));
           }
 
           if (syncedEl.type === 'image' && el.src) {
@@ -2374,7 +2470,7 @@ document.addEventListener('DOMContentLoaded', () => {
         linked.forEach(target => {
           const normX = copy.x / active.width;
           const normY = copy.y / active.height;
-          const scale = Math.min(target.width / active.width, target.height / active.height);
+          const scale = Math.min(target.width, target.height) / Math.min(active.width, active.height);
 
           const syncedCopy = { ...copy };
           syncedCopy.id = 'el_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
@@ -2384,9 +2480,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
           if (syncedCopy.type === 'text') {
             syncedCopy.fontSize = Math.max(14, Math.round(copy.fontSize * scale));
-          } else if (syncedCopy.type === 'image' || syncedCopy.type === 'shape') {
+          } else if (syncedCopy.type === 'shape') {
             syncedCopy.width = Math.max(20, Math.round(copy.width * scale));
             syncedCopy.height = Math.max(20, Math.round(copy.height * scale));
+          } else if (syncedCopy.type === 'image') {
+            const origRatio = (copy.origWidth && copy.origHeight)
+              ? (copy.origWidth / copy.origHeight)
+              : (copy.img && copy.img.naturalWidth && copy.img.naturalHeight)
+                ? (copy.img.naturalWidth / copy.img.naturalHeight)
+                : (copy.width / copy.height);
+            syncedCopy.width = Math.max(20, Math.round(copy.width * scale));
+            syncedCopy.height = Math.max(20, Math.round(syncedCopy.width / origRatio));
           }
 
           if (syncedCopy.type === 'image' && copy.src) {
@@ -2506,13 +2610,8 @@ document.addEventListener('DOMContentLoaded', () => {
         targetCtx.restore();
       });
 
-      // 3. Draw Selection bounding box only on active canvas
-      if (c.id === this.activeCanvasId && c.selectedId && !skipSelection && !this.isExporting) {
-        const sel = c.elements.find(el => el.id === c.selectedId);
-        if (sel) {
-          this.renderSelectionOutline(sel);
-        }
-      }
+      // 3. Selection outline and transform handles (rendered in SVG overlay outside canvas boundaries)
+      this.updateSelectionOverlay(c, skipSelection);
 
       ctx = prevCtx || targetCtx;
     }
@@ -2643,6 +2742,93 @@ document.addEventListener('DOMContentLoaded', () => {
       ctx.restore();
     }
 
+    updateSelectionOverlay(c, skipSelection = false) {
+      if (!c.transformOverlaySvg) return;
+
+      if (skipSelection || this.isExporting || c.id !== this.activeCanvasId || !c.selectedId) {
+        c.transformOverlaySvg.innerHTML = '';
+        return;
+      }
+
+      const sel = c.elements.find(el => el.id === c.selectedId);
+      if (!sel) {
+        c.transformOverlaySvg.innerHTML = '';
+        return;
+      }
+
+      if (c.transformOverlaySvg.getAttribute('viewBox') !== `0 0 ${c.width} ${c.height}`) {
+        c.transformOverlaySvg.setAttribute('viewBox', `0 0 ${c.width} ${c.height}`);
+      }
+
+      const dims = this.getElementDimensions(sel);
+      const pad = 8;
+      const halfW = dims.w / 2 + pad;
+      const halfH = dims.h / 2 + pad;
+      const rotY = -halfH - 24;
+
+      const corners = [
+        { type: 'tl', cx: -halfW, cy: -halfH, cursor: 'nwse-resize' },
+        { type: 'tr', cx: halfW, cy: -halfH, cursor: 'nesw-resize' },
+        { type: 'br', cx: halfW, cy: halfH, cursor: 'nwse-resize' },
+        { type: 'bl', cx: -halfW, cy: halfH, cursor: 'nesw-resize' }
+      ];
+
+      let cornersHtml = '';
+      corners.forEach(corner => {
+        cornersHtml += `
+          <g class="transform-handle-group" data-handle="${corner.type}" style="cursor: ${corner.cursor};">
+            <rect x="${corner.cx - 14}" y="${corner.cy - 14}" width="28" height="28" fill="transparent" pointer-events="all" />
+            <rect x="${corner.cx - 5}" y="${corner.cy - 5}" width="10" height="10" fill="#ffffff" stroke="#ff5722" stroke-width="2" vector-effect="non-scaling-stroke" pointer-events="none" />
+          </g>
+        `;
+      });
+
+      const svgContent = `
+        <g transform="translate(${sel.x}, ${sel.y}) rotate(${sel.rotation || 0})">
+          <!-- Dashed bounding box -->
+          <rect class="transform-bounding-box" x="${-halfW}" y="${-halfH}" width="${halfW * 2}" height="${halfH * 2}" fill="none" stroke="#ff5722" stroke-width="2" stroke-dasharray="6,4" vector-effect="non-scaling-stroke" pointer-events="none" />
+          
+          <!-- Rotation stem -->
+          <line x1="0" y1="${-halfH}" x2="0" y2="${rotY}" stroke="#ff5722" stroke-width="2" vector-effect="non-scaling-stroke" pointer-events="none" />
+          
+          <!-- Rotation handle -->
+          <g class="transform-handle-group" data-handle="rotate" style="cursor: grab;">
+            <circle cx="0" cy="${rotY}" r="16" fill="transparent" pointer-events="all" />
+            <circle cx="0" cy="${rotY}" r="6" fill="#ff5722" stroke="#ffffff" stroke-width="2" vector-effect="non-scaling-stroke" pointer-events="none" />
+          </g>
+
+          <!-- 4 Corner handles -->
+          ${cornersHtml}
+        </g>
+      `;
+
+      c.transformOverlaySvg.innerHTML = svgContent;
+
+      c.transformOverlaySvg.querySelectorAll('.transform-handle-group').forEach(h => {
+        h.addEventListener('mousedown', (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+
+          if (this.activeCanvasId !== c.id) {
+            this.setActiveCanvas(c.id);
+          }
+
+          const coords = this.getCanvasCoords(e);
+          this.dragStartX = coords.x;
+          this.dragStartY = coords.y;
+          this.initialElementState = { ...sel };
+
+          const handle = h.dataset.handle;
+          if (handle === 'rotate') {
+            this.isRotating = true;
+          } else {
+            this.isResizing = true;
+            this.activeHandle = handle;
+          }
+        });
+      });
+    }
+
     renderSelectionOutline(el) {
       ctx.save();
       ctx.translate(el.x, el.y);
@@ -2764,6 +2950,30 @@ document.addEventListener('DOMContentLoaded', () => {
         // VIEWPORT PANNING (drag on background or middle-click or space)
         canvasViewport.addEventListener('mousedown', (e) => {
           if (e.target === canvasViewport || e.target === canvasWorkspace || e.button === 1 || this.isSpacePressed) {
+            // Check if user clicked a handle outside the canvas bounds in the workspace
+            const active = this.getActiveCanvas();
+            if (active && active.selectedId && !this.isSpacePressed && e.button === 0) {
+              const coords = this.getCanvasCoords(e);
+              const sel = this.getSelected();
+              if (sel) {
+                const handle = this.checkHandleHit(sel, coords.x, coords.y);
+                if (handle) {
+                  this.dragStartX = coords.x;
+                  this.dragStartY = coords.y;
+                  this.initialElementState = { ...sel };
+                  if (handle === 'rotate') {
+                    this.isRotating = true;
+                  } else {
+                    this.isResizing = true;
+                    this.activeHandle = handle;
+                  }
+                  e.preventDefault();
+                  e.stopPropagation();
+                  return;
+                }
+              }
+            }
+
             this.isPanning = true;
             this.panStartX = e.clientX - this.panX;
             this.panStartY = e.clientY - this.panY;
@@ -2822,7 +3032,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
           this.canvases.forEach(c => {
             c.boardEl.classList.remove('drop-target-ready');
-            if (c.connectorPin) c.connectorPin.classList.remove('dragging');
+            if (c.boardEl) {
+              c.boardEl.querySelectorAll('.canvas-connector-dot').forEach(d => d.classList.remove('dragging'));
+            }
           });
 
           if (sourceId && targetId && sourceId !== targetId) {
@@ -3061,12 +3273,19 @@ document.addEventListener('DOMContentLoaded', () => {
         if (sel) {
           const handle = this.checkHandleHit(sel, coords.x, coords.y);
           if (handle === 'rotate') {
-            canvas.style.cursor = 'grab';
+            if (canvas) canvas.style.cursor = 'grab';
+            if (canvasViewport) canvasViewport.style.cursor = 'grab';
             return;
           } else if (handle) {
-            canvas.style.cursor = 'nwse-resize';
+            const cursorType = (handle === 'tl' || handle === 'br') ? 'nwse-resize' : 'nesw-resize';
+            if (canvas) canvas.style.cursor = cursorType;
+            if (canvasViewport) canvasViewport.style.cursor = cursorType;
             return;
           }
+        }
+
+        if (canvasViewport && !this.isSpacePressed && !this.isPanMode) {
+          canvasViewport.style.cursor = '';
         }
 
         let isOverObj = false;
@@ -3076,7 +3295,7 @@ document.addEventListener('DOMContentLoaded', () => {
             break;
           }
         }
-        canvas.style.cursor = isOverObj ? 'move' : 'crosshair';
+        if (canvas) canvas.style.cursor = isOverObj ? 'move' : 'crosshair';
         return;
       }
 
@@ -3100,9 +3319,27 @@ document.addEventListener('DOMContentLoaded', () => {
           sel.fontSize = Math.max(12, Math.min(300, Math.round(this.initialElementState.fontSize * scaleFactor)));
           propFontSize.value = sel.fontSize;
         } else {
-          // Image / Shape scale
-          const newW = Math.max(40, this.initialElementState.width + dx * 2);
-          const ratio = this.initialElementState.width / this.initialElementState.height;
+          // Image / Shape scale supporting all 4 corners smoothly
+          const rad = -((this.initialElementState.rotation || 0) * Math.PI) / 180;
+          const localDx = dx * Math.cos(rad) - dy * Math.sin(rad);
+          const localDy = dx * Math.sin(rad) + dy * Math.cos(rad);
+
+          let dirX = 1;
+          let dirY = 1;
+          if (this.activeHandle === 'tl') {
+            dirX = -1;
+            dirY = -1;
+          } else if (this.activeHandle === 'tr') {
+            dirX = 1;
+            dirY = -1;
+          } else if (this.activeHandle === 'bl') {
+            dirX = -1;
+            dirY = 1;
+          }
+
+          const ratio = (this.initialElementState.width || 300) / (this.initialElementState.height || 200);
+          const projectedDelta = (localDx * dirX + (localDy * dirY) * ratio) / 2;
+          const newW = Math.max(40, this.initialElementState.width + projectedDelta * 2);
           sel.width = Math.round(newW);
           sel.height = Math.round(newW / ratio);
         }
@@ -3890,15 +4127,46 @@ document.addEventListener('DOMContentLoaded', () => {
   btnFitCanvas.addEventListener('click', () => {
     const sel = canvasEngine.getSelected();
     if (sel && sel.type === 'image') {
-      sel.x = canvasEngine.width / 2;
-      sel.y = canvasEngine.height / 2;
-      sel.width = canvasEngine.width;
-      sel.height = canvasEngine.height;
+      const active = canvasEngine.getActiveCanvas();
+      const cw = active ? active.width : canvasEngine.width;
+      const ch = active ? active.height : canvasEngine.height;
+      const origRatio = (sel.origWidth && sel.origHeight)
+        ? (sel.origWidth / sel.origHeight)
+        : (sel.img && sel.img.naturalWidth && sel.img.naturalHeight)
+          ? (sel.img.naturalWidth / sel.img.naturalHeight)
+          : (sel.width / sel.height);
+
+      const baseW = sel.origWidth || (sel.img && sel.img.naturalWidth) || sel.width;
+      const baseH = Math.round(baseW / origRatio);
+      const coverScale = Math.max(cw / baseW, ch / baseH);
+
+      sel.width = Math.round(baseW * coverScale);
+      sel.height = Math.round(sel.width / origRatio);
+      sel.x = Math.round(cw / 2);
+      sel.y = Math.round(ch / 2);
       sel.rotation = 0;
       canvasEngine.saveHistory();
       canvasEngine.render();
+      showToast('Imagem ajustada para preencher a tela mantendo proporções!', 'success');
     }
   });
+
+  if (btnResetAspect) {
+    btnResetAspect.addEventListener('click', () => {
+      const sel = canvasEngine.getSelected();
+      if (sel && sel.type === 'image') {
+        const origRatio = (sel.origWidth && sel.origHeight)
+          ? (sel.origWidth / sel.origHeight)
+          : (sel.img && sel.img.naturalWidth && sel.img.naturalHeight)
+            ? (sel.img.naturalWidth / sel.img.naturalHeight)
+            : (sel.width / sel.height);
+        sel.height = Math.max(20, Math.round(sel.width / origRatio));
+        canvasEngine.saveHistory();
+        canvasEngine.render();
+        showToast('Proporção original restaurada!', 'success');
+      }
+    });
+  }
 
   // Shape Property Listeners
   propShapeColor.addEventListener('input', (e) => {
