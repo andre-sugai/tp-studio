@@ -1,5 +1,5 @@
 /**
- * Canivete TP - Dashboard Script
+ * TP Estúdio - Dashboard Script
  * Gerenciador de Templates de Texto & Criador de Thumbnails/Imagens para YouTube
  */
 
@@ -48,6 +48,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (targetTab === 'thumbnailsTab') {
         canvasEngine.render();
+      } else if (targetTab === 'carouselTab' && window.carouselEngine) {
+        window.carouselEngine.renderAll();
       }
     });
   });
@@ -474,7 +476,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(templates, null, 2));
       const downloadAnchor = document.createElement('a');
       downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", `templates_canivete_tp_${new Date().toISOString().slice(0,10)}.json`);
+      downloadAnchor.setAttribute("download", `templates_tp_estudio_${new Date().toISOString().slice(0,10)}.json`);
       document.body.appendChild(downloadAnchor);
       downloadAnchor.click();
       downloadAnchor.remove();
@@ -891,7 +893,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(quickLinks, null, 2));
       const downloadAnchor = document.createElement('a');
       downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", `links_canivete_tp_${new Date().toISOString().slice(0,10)}.json`);
+      downloadAnchor.setAttribute("download", `links_tp_estudio_${new Date().toISOString().slice(0,10)}.json`);
       document.body.appendChild(downloadAnchor);
       downloadAnchor.click();
       downloadAnchor.remove();
@@ -1371,7 +1373,7 @@ document.addEventListener('DOMContentLoaded', () => {
         c.syncBtn.classList.add('connected');
         c.syncBtn.innerHTML = `
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-          <span class="sync-label">🔗 Conectado</span>
+          <span class="sync-label">Conectado</span>
         `;
         c.syncBtn.title = 'Canvas conectado! Clique para desconectar';
         c.boardEl.classList.add('synced-board');
@@ -3979,5 +3981,1901 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
   }
+
+  // =========================================================================
+  // MODULE 5: CAROUSEL CREATOR (INSTAGRAM & YOUTUBE COMMUNITY ENGINE)
+  // =========================================================================
+  const carouselWorkspace = document.getElementById('carouselWorkspace');
+  const carouselViewport = document.getElementById('carouselViewport');
+  const carouselPresetSelect = document.getElementById('carouselPresetSelect');
+  const carouselAddSlideBtn = document.getElementById('carouselAddSlideBtn');
+  const carouselDuplicateSlideBtn = document.getElementById('carouselDuplicateSlideBtn');
+  const carouselDeleteSlideBtn = document.getElementById('carouselDeleteSlideBtn');
+  const carouselToggleNumberingBtn = document.getElementById('carouselToggleNumberingBtn');
+  const carouselUndoBtn = document.getElementById('carouselUndoBtn');
+  const carouselRedoBtn = document.getElementById('carouselRedoBtn');
+  const carouselClearBtn = document.getElementById('carouselClearBtn');
+  const carouselShortcutsModalBtn = document.getElementById('carouselShortcutsModalBtn');
+
+  const carouselExportDropdownWrapper = document.getElementById('carouselExportDropdownWrapper');
+  const carouselExportDropdownBtn = document.getElementById('carouselExportDropdownBtn');
+  const carouselExportDropdownMenu = document.getElementById('carouselExportDropdownMenu');
+
+  const carouselToolAddText = document.getElementById('carouselToolAddText');
+  const carouselToolUploadImage = document.getElementById('carouselToolUploadImage');
+  const carouselImageFileInput = document.getElementById('carouselImageFileInput');
+  const carouselToolAddBadge = document.getElementById('carouselToolAddBadge');
+  const carouselToolPanCanvas = document.getElementById('carouselToolPanCanvas');
+  const carouselBgColorInput = document.getElementById('carouselBgColorInput');
+  const carouselBgSwatches = document.getElementById('carouselBgSwatches');
+  const carouselLayersContainer = document.getElementById('carouselLayersContainer');
+
+  const carouselSlidesStrip = document.getElementById('carouselSlidesStrip');
+  const carouselStripAddBtn = document.getElementById('carouselStripAddBtn');
+
+  // Zoom controls
+  const carouselPanModeToggleBtn = document.getElementById('carouselPanModeToggleBtn');
+  const carouselZoomOutBtn = document.getElementById('carouselZoomOutBtn');
+  const carouselZoomResetBtn = document.getElementById('carouselZoomResetBtn');
+  const carouselZoomLevelDisplay = document.getElementById('carouselZoomLevelDisplay');
+  const carouselZoomInBtn = document.getElementById('carouselZoomInBtn');
+  const carouselZoomFitBtn = document.getElementById('carouselZoomFitBtn');
+
+  // Inspector elements
+  const carouselPropertiesPanel = document.getElementById('carouselPropertiesPanel');
+  const carouselEmptySelectionMsg = document.getElementById('carouselEmptySelectionMsg');
+  const carouselTextInspector = document.getElementById('carouselTextInspector');
+  const carouselImageInspector = document.getElementById('carouselImageInspector');
+  const carouselShapeInspector = document.getElementById('carouselShapeInspector');
+
+  // Text inputs
+  const carouselPropTextContent = document.getElementById('carouselPropTextContent');
+  const carouselPropFontFamily = document.getElementById('carouselPropFontFamily');
+  const carouselPropFontSize = document.getElementById('carouselPropFontSize');
+  const carouselPropTextColor = document.getElementById('carouselPropTextColor');
+  const carouselPropTextColorHex = document.getElementById('carouselPropTextColorHex');
+  const carouselPropFontWeight = document.getElementById('carouselPropFontWeight');
+  const carouselPropRotation = document.getElementById('carouselPropRotation');
+  const carouselPropStrokeColor = document.getElementById('carouselPropStrokeColor');
+  const carouselPropStrokeWidth = document.getElementById('carouselPropStrokeWidth');
+  const carouselPropShadowEnabled = document.getElementById('carouselPropShadowEnabled');
+  const carouselPropShadowColor = document.getElementById('carouselPropShadowColor');
+  const carouselPropShadowBlur = document.getElementById('carouselPropShadowBlur');
+  const carouselPropBgEnabled = document.getElementById('carouselPropBgEnabled');
+  const carouselPropBgColor = document.getElementById('carouselPropBgColor');
+  const carouselPropBgPadding = document.getElementById('carouselPropBgPadding');
+  const carouselPropOpacity = document.getElementById('carouselPropOpacity');
+  const carouselPropOpacityVal = document.getElementById('carouselPropOpacityVal');
+  const carouselBtnDuplicateText = document.getElementById('carouselBtnDuplicateText');
+  const carouselBtnDeleteText = document.getElementById('carouselBtnDeleteText');
+
+  // Image inputs
+  const carouselPropImgWidth = document.getElementById('carouselPropImgWidth');
+  const carouselPropImgHeight = document.getElementById('carouselPropImgHeight');
+  const carouselPropImgOpacity = document.getElementById('carouselPropImgOpacity');
+  const carouselPropImgOpacityVal = document.getElementById('carouselPropImgOpacityVal');
+  const carouselPropImgRadius = document.getElementById('carouselPropImgRadius');
+  const carouselPropImgRadiusVal = document.getElementById('carouselPropImgRadiusVal');
+  const carouselPropImgShadow = document.getElementById('carouselPropImgShadow');
+  const carouselPropImgRotation = document.getElementById('carouselPropImgRotation');
+  const carouselBtnDuplicateImg = document.getElementById('carouselBtnDuplicateImg');
+  const carouselBtnDeleteImg = document.getElementById('carouselBtnDeleteImg');
+
+  // Shape inputs
+  const carouselPropShapeColor = document.getElementById('carouselPropShapeColor');
+  const carouselPropShapeColorHex = document.getElementById('carouselPropShapeColorHex');
+  const carouselPropShapeRadius = document.getElementById('carouselPropShapeRadius');
+  const carouselPropShapeOpacity = document.getElementById('carouselPropShapeOpacity');
+  const carouselPropShapeOpacityVal = document.getElementById('carouselPropShapeOpacityVal');
+  const carouselBtnDuplicateShape = document.getElementById('carouselBtnDuplicateShape');
+  const carouselBtnDeleteShape = document.getElementById('carouselBtnDeleteShape');
+
+  class CarouselEngine {
+    constructor() {
+      this.slides = [];
+      this.activeSlideId = null;
+      this.slideCount = 0;
+
+      // Presets
+      this.width = 1080;
+      this.height = 1350;
+      this.defaultBgColor = '#0f172a';
+      this.showNumbering = true;
+
+      // Interaction state
+      this.isDragging = false;
+      this.isResizing = false;
+      this.isRotating = false;
+      this.activeHandle = null;
+      this.dragStartX = 0;
+      this.dragStartY = 0;
+      this.initialElementState = null;
+
+      // Zoom & Pan
+      this.zoomLevel = 0.95;
+      this.panX = 0;
+      this.panY = 0;
+      this.isPanning = false;
+      this.isPanMode = false;
+      this.panStartX = 0;
+      this.panStartY = 0;
+      this.isSpacePressed = false;
+
+      // History
+      this.history = [];
+      this.historyIndex = -1;
+
+      this.init();
+    }
+
+    getActiveSlide() {
+      return this.slides.find(s => s.id === this.activeSlideId) || this.slides[0];
+    }
+
+    init() {
+      this.setupInitialSlides();
+      this.setupEventListeners();
+      this.updateZoomTransform();
+      this.renderAll();
+      this.saveHistory();
+    }
+
+    setupInitialSlides() {
+      if (!carouselWorkspace) return;
+      carouselWorkspace.innerHTML = '';
+      this.slides = [];
+      this.slideCount = 0;
+
+      // Create 3 initial template slides (Hook / Content / CTA)
+      const slide1 = this.createSlideBoard(this.width, this.height, 'Slide 1 (Capa)', [
+        {
+          type: 'text',
+          text: 'COMO CRIAR\nCARROSSÉIS',
+          x: 100,
+          y: 360,
+          fontSize: 88,
+          fontFamily: "'Montserrat', sans-serif",
+          fontWeight: '900',
+          color: '#ffffff',
+          align: 'left',
+          rotation: 0,
+          opacity: 1,
+          shadow: { enabled: true, color: 'rgba(0,0,0,0.6)', blur: 16 }
+        },
+        {
+          type: 'text',
+          text: 'QUE VIRALIZAM NO FEED',
+          x: 100,
+          y: 610,
+          fontSize: 48,
+          fontFamily: "'Montserrat', sans-serif",
+          fontWeight: '900',
+          color: '#ffffff',
+          align: 'left',
+          rotation: 0,
+          opacity: 1,
+          bg: { enabled: true, color: '#ff5722', padding: 14 }
+        },
+        {
+          type: 'text',
+          text: 'Arraste para o lado 👉',
+          x: 100,
+          y: 1180,
+          fontSize: 32,
+          fontFamily: "'Poppins', sans-serif",
+          fontWeight: '600',
+          color: '#cbd5e1',
+          align: 'left',
+          rotation: 0,
+          opacity: 0.9
+        }
+      ]);
+
+      const slide2 = this.createSlideBoard(this.width, this.height, 'Slide 2', [
+        {
+          type: 'text',
+          text: 'PASSO 1',
+          x: 100,
+          y: 220,
+          fontSize: 32,
+          fontFamily: "'Montserrat', sans-serif",
+          fontWeight: '800',
+          color: '#ff7043',
+          align: 'left',
+          rotation: 0,
+          opacity: 1
+        },
+        {
+          type: 'text',
+          text: 'Entregue valor rápido',
+          x: 100,
+          y: 320,
+          fontSize: 68,
+          fontFamily: "'Montserrat', sans-serif",
+          fontWeight: '900',
+          color: '#ffffff',
+          align: 'left',
+          rotation: 0,
+          opacity: 1
+        },
+        {
+          type: 'text',
+          text: 'Nas primeiras 3 linhas do carrossel,\nresponda diretamente à promessa da capa\npara manter o leitor até o final.',
+          x: 100,
+          y: 460,
+          fontSize: 38,
+          fontFamily: "'Poppins', sans-serif",
+          fontWeight: '400',
+          color: '#cbd5e1',
+          align: 'left',
+          rotation: 0,
+          opacity: 0.95
+        }
+      ]);
+
+      const slide3 = this.createSlideBoard(this.width, this.height, 'Slide 3 (CTA)', [
+        {
+          type: 'text',
+          text: 'GOSTOU DESSA DICA?',
+          x: 100,
+          y: 440,
+          fontSize: 64,
+          fontFamily: "'Montserrat', sans-serif",
+          fontWeight: '900',
+          color: '#ffffff',
+          align: 'left',
+          rotation: 0,
+          opacity: 1
+        },
+        {
+          type: 'text',
+          text: 'Salve este post para consultar mais tarde 📌',
+          x: 100,
+          y: 560,
+          fontSize: 36,
+          fontFamily: "'Poppins', sans-serif",
+          fontWeight: '600',
+          color: '#ff7043',
+          align: 'left',
+          rotation: 0,
+          opacity: 1
+        },
+        {
+          type: 'text',
+          text: 'Deixe seu comentário e compartilhe com um amigo! ❤️',
+          x: 100,
+          y: 660,
+          fontSize: 30,
+          fontFamily: "'Poppins', sans-serif",
+          fontWeight: '400',
+          color: '#94a3b8',
+          align: 'left',
+          rotation: 0,
+          opacity: 0.85
+        }
+      ]);
+
+      this.setActiveSlide(slide1.id);
+      this.repositionAllSlides();
+    }
+
+    createSlideBoard(w, h, name = null, initialElements = []) {
+      this.slideCount++;
+      const id = 'cslide_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+      const slideName = name || `Slide ${this.slides.length + 1}`;
+
+      const boardEl = document.createElement('div');
+      boardEl.className = 'carousel-board';
+      boardEl.id = `board_${id}`;
+
+      const DISPLAY_SCALE = 0.40;
+      const renderedW = Math.round(w * DISPLAY_SCALE);
+      const renderedH = Math.round(h * DISPLAY_SCALE);
+
+      boardEl.innerHTML = `
+        <div class="carousel-board-header">
+          <div class="carousel-board-header-left">
+            <span class="carousel-slide-tag">${escapeHtml(slideName)}</span>
+          </div>
+          <div class="carousel-board-header-right">
+            <span>${w}×${h}</span>
+          </div>
+        </div>
+        <div class="carousel-canvas-container" style="width: ${renderedW}px; height: ${renderedH}px;">
+          <canvas width="${w}" height="${h}" class="carousel-slide-canvas" style="width: 100%; height: 100%;"></canvas>
+        </div>
+      `;
+
+      const canvasEl = boardEl.querySelector('.carousel-slide-canvas');
+      const ctx = canvasEl.getContext('2d');
+
+      const elements = initialElements.map(item => ({
+        id: 'el_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+        type: item.type || 'text',
+        text: item.text || 'Texto',
+        fontSize: item.fontSize || 60,
+        fontFamily: item.fontFamily || "'Montserrat', sans-serif",
+        fontWeight: item.fontWeight || '900',
+        color: item.color || '#ffffff',
+        align: item.align || 'left',
+        rotation: item.rotation || 0,
+        opacity: item.opacity !== undefined ? item.opacity : 1,
+        shadow: item.shadow ? { ...item.shadow } : { enabled: false, color: '#000000', blur: 10 },
+        stroke: item.stroke ? { ...item.stroke } : { color: '#000000', width: 0 },
+        bg: item.bg ? { ...item.bg } : { enabled: false, color: '#ff5722', padding: 12 },
+        x: item.x || 100,
+        y: item.y || 100,
+        width: item.width || 300,
+        height: item.height || 100,
+        borderRadius: item.borderRadius || 0
+      }));
+
+      const slideObj = {
+        id,
+        name: slideName,
+        width: w,
+        height: h,
+        bgColor: this.defaultBgColor,
+        elements,
+        selectedId: null,
+        boardEl,
+        canvasEl,
+        ctx
+      };
+
+      // Slide click events
+      boardEl.addEventListener('mousedown', () => {
+        if (this.activeSlideId !== id) {
+          this.setActiveSlide(id);
+        }
+      });
+
+      canvasEl.addEventListener('mousedown', (e) => this.handleCanvasMouseDown(id, e));
+
+      if (carouselWorkspace) carouselWorkspace.appendChild(boardEl);
+      this.slides.push(slideObj);
+
+      this.updateSlideStrip();
+      return slideObj;
+    }
+
+    repositionAllSlides() {
+      const DISPLAY_SCALE = 0.40;
+      const GAP = 28;
+      const totalWidth = this.slides.reduce((acc, s) => acc + Math.round(s.width * DISPLAY_SCALE) + GAP, -GAP);
+      const startX = -Math.round(totalWidth / 2);
+
+      let currentX = startX;
+      this.slides.forEach((s, idx) => {
+        const renderedW = Math.round(s.width * DISPLAY_SCALE);
+        const renderedH = Math.round(s.height * DISPLAY_SCALE);
+
+        s.boardEl.style.left = `${currentX}px`;
+        s.boardEl.style.top = `${-Math.round(renderedH / 2) - 16}px`;
+
+        const container = s.boardEl.querySelector('.carousel-canvas-container');
+        if (container) {
+          container.style.width = `${renderedW}px`;
+          container.style.height = `${renderedH}px`;
+        }
+
+        // Update tag title
+        const tag = s.boardEl.querySelector('.carousel-slide-tag');
+        if (tag) {
+          const suffix = idx === 0 ? ' (Capa)' : (idx === this.slides.length - 1 ? ' (CTA)' : '');
+          tag.textContent = `Slide ${idx + 1}${suffix}`;
+        }
+
+        currentX += renderedW + GAP;
+      });
+
+      this.updateSlideStrip();
+    }
+
+    setActiveSlide(slideId) {
+      this.activeSlideId = slideId;
+      this.slides.forEach(s => {
+        s.boardEl.classList.toggle('active', s.id === slideId);
+      });
+      this.updateSlideStrip();
+      this.renderLayers();
+      this.updateInspector();
+      this.renderAll();
+    }
+
+    updateSlideStrip() {
+      if (!carouselSlidesStrip) return;
+      carouselSlidesStrip.innerHTML = '';
+
+      this.slides.forEach((s, idx) => {
+        const thumb = document.createElement('div');
+        thumb.className = `carousel-slide-thumb ${s.id === this.activeSlideId ? 'active' : ''}`;
+        thumb.title = `Ir para Slide ${idx + 1}`;
+
+        const isCover = idx === 0;
+        const isEnd = idx === this.slides.length - 1 && this.slides.length > 1;
+        let badge = `SLIDE ${idx + 1}`;
+        if (isCover) badge = 'CAPA';
+        else if (isEnd) badge = 'CTA';
+
+        thumb.innerHTML = `
+          <span class="carousel-slide-thumb-num">${idx + 1}</span>
+          <span class="carousel-slide-thumb-badge">${badge}</span>
+        `;
+
+        thumb.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.setActiveSlide(s.id);
+        });
+
+        carouselSlidesStrip.appendChild(thumb);
+      });
+    }
+
+    addSlide() {
+      if (this.slides.length >= 10) {
+        showToast('Limite máximo de 10 slides atingido para este carrossel.', 'info');
+        return;
+      }
+      const active = this.getActiveSlide();
+      const newSlide = this.createSlideBoard(this.width, this.height, `Slide ${this.slides.length + 1}`, [
+        {
+          type: 'text',
+          text: `PONTO ${this.slides.length}`,
+          x: 100,
+          y: 260,
+          fontSize: 32,
+          fontFamily: "'Montserrat', sans-serif",
+          fontWeight: '800',
+          color: '#ff7043'
+        },
+        {
+          type: 'text',
+          text: 'Novo Tópico',
+          x: 100,
+          y: 360,
+          fontSize: 64,
+          fontFamily: "'Montserrat', sans-serif",
+          fontWeight: '900',
+          color: '#ffffff'
+        }
+      ]);
+      if (active) newSlide.bgColor = active.bgColor;
+      this.repositionAllSlides();
+      this.setActiveSlide(newSlide.id);
+      this.saveHistory();
+      showToast(`Slide ${this.slides.length} adicionado!`, 'success');
+    }
+
+    duplicateSlide() {
+      if (this.slides.length >= 10) {
+        showToast('Limite máximo de 10 slides atingido.', 'info');
+        return;
+      }
+      const active = this.getActiveSlide();
+      if (!active) return;
+
+      const duplicatedElements = active.elements.map(el => {
+        const copy = JSON.parse(JSON.stringify(el));
+        copy.id = 'el_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+        return copy;
+      });
+
+      const newSlide = this.createSlideBoard(active.width, active.height, `Slide ${this.slides.length + 1}`, duplicatedElements);
+      newSlide.bgColor = active.bgColor;
+
+      this.repositionAllSlides();
+      this.setActiveSlide(newSlide.id);
+      this.saveHistory();
+      showToast('Slide duplicado com sucesso!', 'success');
+    }
+
+    deleteSlide() {
+      if (this.slides.length <= 1) {
+        showToast('O carrossel precisa ter pelo menos 1 slide.', 'error');
+        return;
+      }
+      const active = this.getActiveSlide();
+      if (!active) return;
+
+      if (confirm(`Deseja excluir este slide do carrossel?`)) {
+        const idx = this.slides.findIndex(s => s.id === active.id);
+        active.boardEl.remove();
+        this.slides.splice(idx, 1);
+
+        const nextActive = this.slides[Math.min(idx, this.slides.length - 1)];
+        this.repositionAllSlides();
+        this.setActiveSlide(nextActive.id);
+        this.saveHistory();
+        showToast('Slide excluído!', 'info');
+      }
+    }
+
+    setPreset(key) {
+      let w = 1080, h = 1350;
+      if (key === '1080x1080') {
+        w = 1080; h = 1080;
+      } else if (key === '1080x1920') {
+        w = 1080; h = 1920;
+      }
+      this.width = w;
+      this.height = h;
+
+      this.slides.forEach(s => {
+        s.width = w;
+        s.height = h;
+        s.canvasEl.width = w;
+        s.canvasEl.height = h;
+        const resEl = s.boardEl.querySelector('.carousel-board-header-right span');
+        if (resEl) resEl.textContent = `${w}×${h}`;
+      });
+
+      this.repositionAllSlides();
+      this.renderAll();
+      this.saveHistory();
+    }
+
+    toggleNumbering() {
+      this.showNumbering = !this.showNumbering;
+      if (carouselToggleNumberingBtn) {
+        carouselToggleNumberingBtn.classList.toggle('active', this.showNumbering);
+      }
+      this.renderAll();
+      showToast(this.showNumbering ? 'Numeração automática ativada (1/N)' : 'Numeração desativada', 'info');
+    }
+
+    // Canvas Element Interaction
+    handleCanvasMouseDown(slideId, e) {
+      const slide = this.slides.find(s => s.id === slideId);
+      if (!slide) return;
+      if (this.isPanMode || this.isSpacePressed || e.button === 1) return;
+
+      const rect = slide.canvasEl.getBoundingClientRect();
+      const scaleX = slide.width / rect.width;
+      const scaleY = slide.height / rect.height;
+      const clickX = (e.clientX - rect.left) * scaleX;
+      const clickY = (e.clientY - rect.top) * scaleY;
+
+      // Check handle on selected element first
+      if (slide.selectedId) {
+        const sel = slide.elements.find(el => el.id === slide.selectedId);
+        if (sel) {
+          const handles = this.getHandles(sel);
+          for (let h of handles) {
+            if (Math.hypot(clickX - h.x, clickY - h.y) <= 18) {
+              this.activeHandle = h.type;
+              this.isResizing = h.type !== 'rot';
+              this.isRotating = h.type === 'rot';
+              this.dragStartX = clickX;
+              this.dragStartY = clickY;
+              this.initialElementState = { ...sel };
+              return;
+            }
+          }
+        }
+      }
+
+      // Check element selection top-to-bottom
+      let clickedEl = null;
+      for (let i = slide.elements.length - 1; i >= 0; i--) {
+        const el = slide.elements[i];
+        if (this.isPointInsideElement(clickX, clickY, el)) {
+          clickedEl = el;
+          break;
+        }
+      }
+
+      if (clickedEl) {
+        slide.selectedId = clickedEl.id;
+        this.isDragging = true;
+        this.dragStartX = clickX;
+        this.dragStartY = clickY;
+        this.initialElementState = { ...clickedEl };
+      } else {
+        slide.selectedId = null;
+      }
+
+      this.renderAll();
+      this.updateInspector();
+      this.renderLayers();
+    }
+
+    isPointInsideElement(px, py, el) {
+      if (el.rotation) {
+        const cx = el.x + (el.width || 100) / 2;
+        const cy = el.y + (el.height || 40) / 2;
+        const rad = -el.rotation * Math.PI / 180;
+        const rx = Math.cos(rad) * (px - cx) - Math.sin(rad) * (py - cy) + cx;
+        const ry = Math.sin(rad) * (px - cx) + Math.cos(rad) * (py - cy) + cy;
+        px = rx;
+        py = ry;
+      }
+      return px >= el.x && px <= el.x + el.width && py >= el.y && py <= el.y + el.height;
+    }
+
+    getHandles(el) {
+      const handles = [];
+      const x = el.x, y = el.y, w = el.width, h = el.height;
+      handles.push({ type: 'tl', x, y });
+      handles.push({ type: 'tr', x: x + w, y });
+      handles.push({ type: 'bl', x, y: y + h });
+      handles.push({ type: 'br', x: x + w, y: y + h });
+      handles.push({ type: 'rot', x: x + w / 2, y: y - 28 });
+      return handles;
+    }
+
+    renderAll() {
+      this.slides.forEach((s, idx) => {
+        this.renderSlideToContext(s, s.ctx, false, idx, this.slides.length);
+      });
+    }
+
+    renderSlideToContext(slide, ctx, isExporting = false, slideIndex = 0, totalSlides = 1) {
+      if (!ctx) return;
+      ctx.clearRect(0, 0, slide.width, slide.height);
+
+      // Background
+      ctx.fillStyle = slide.bgColor || '#0f172a';
+      ctx.fillRect(0, 0, slide.width, slide.height);
+
+      // Elements bottom-to-top
+      slide.elements.forEach(el => {
+        ctx.save();
+        ctx.globalAlpha = el.opacity !== undefined ? el.opacity : 1;
+
+        if (el.rotation) {
+          const cx = el.x + el.width / 2;
+          const cy = el.y + el.height / 2;
+          ctx.translate(cx, cy);
+          ctx.rotate(el.rotation * Math.PI / 180);
+          ctx.translate(-cx, -cy);
+        }
+
+        if (el.type === 'shape') {
+          ctx.fillStyle = el.color || '#ff5722';
+          this.drawRoundedRect(ctx, el.x, el.y, el.width, el.height, el.borderRadius || 0);
+          ctx.fill();
+        } else if (el.type === 'image' && el.img) {
+          if (el.shadow && el.shadow.enabled) {
+            ctx.shadowColor = el.shadow.color || 'rgba(0,0,0,0.5)';
+            ctx.shadowBlur = el.shadow.blur || 20;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 6;
+          } else {
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+          }
+          if (el.borderRadius > 0) {
+            ctx.save();
+            this.drawRoundedRect(ctx, el.x, el.y, el.width, el.height, el.borderRadius);
+            ctx.clip();
+            ctx.drawImage(el.img, el.x, el.y, el.width, el.height);
+            ctx.restore();
+          } else {
+            ctx.drawImage(el.img, el.x, el.y, el.width, el.height);
+          }
+        } else if (el.type === 'text') {
+          const fontSize = el.fontSize || 60;
+          const weight = el.fontWeight || '900';
+          const family = el.fontFamily || "'Montserrat', sans-serif";
+          ctx.font = `${weight} ${fontSize}px ${family}`;
+          ctx.textBaseline = 'top';
+
+          const lines = (el.text || '').split('\n');
+          const lineHeight = fontSize * 1.18;
+          let textW = 0;
+          lines.forEach(l => {
+            const lw = ctx.measureText(l).width;
+            if (lw > textW) textW = lw;
+          });
+          const textH = lines.length * lineHeight;
+          el.width = Math.max(textW + (el.bg && el.bg.enabled ? (el.bg.padding || 12) * 2 : 0), 40);
+          el.height = Math.max(textH + (el.bg && el.bg.enabled ? (el.bg.padding || 12) * 2 : 0), 30);
+
+          // Background box
+          if (el.bg && el.bg.enabled) {
+            ctx.fillStyle = el.bg.color || '#ff5722';
+            this.drawRoundedRect(ctx, el.x, el.y, el.width, el.height, 8);
+            ctx.fill();
+          }
+
+          // Shadow
+          if (el.shadow && el.shadow.enabled) {
+            ctx.shadowColor = el.shadow.color || 'rgba(0,0,0,0.6)';
+            ctx.shadowBlur = el.shadow.blur || 14;
+            ctx.shadowOffsetX = 2;
+            ctx.shadowOffsetY = 4;
+          }
+
+          // Text lines
+          const pad = (el.bg && el.bg.enabled) ? (el.bg.padding || 12) : 0;
+          lines.forEach((lineText, lIdx) => {
+            const lineY = el.y + pad + lIdx * lineHeight;
+            let lineX = el.x + pad;
+            if (el.align === 'center') {
+              lineX = el.x + el.width / 2;
+              ctx.textAlign = 'center';
+            } else if (el.align === 'right') {
+              lineX = el.x + el.width - pad;
+              ctx.textAlign = 'right';
+            } else {
+              ctx.textAlign = 'left';
+            }
+
+            if (el.stroke && el.stroke.width > 0) {
+              ctx.strokeStyle = el.stroke.color || '#000000';
+              ctx.lineWidth = el.stroke.width;
+              ctx.lineJoin = 'round';
+              ctx.strokeText(lineText, lineX, lineY);
+            }
+
+            ctx.fillStyle = el.color || '#ffffff';
+            ctx.fillText(lineText, lineX, lineY);
+          });
+        }
+
+        ctx.restore();
+      });
+
+      // Auto-numbering overlay (1/N)
+      if (this.showNumbering) {
+        ctx.save();
+        const numText = `${slideIndex + 1}/${totalSlides}`;
+        ctx.font = '700 28px Montserrat, sans-serif';
+        const tw = ctx.measureText(numText).width;
+        const pillW = tw + 28;
+        const pillH = 42;
+        const pillX = slide.width - pillW - 32;
+        const pillY = 32;
+
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+        this.drawRoundedRect(ctx, pillX, pillY, pillW, pillH, 21);
+        ctx.fill();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(numText, pillX + pillW / 2, pillY + pillH / 2 + 1);
+        ctx.restore();
+      }
+
+      // Selection box & handles (only when not exporting)
+      if (!isExporting && slide.selectedId) {
+        const sel = slide.elements.find(el => el.id === slide.selectedId);
+        if (sel) {
+          ctx.save();
+          ctx.strokeStyle = '#00f0ff';
+          ctx.lineWidth = 2.5;
+          ctx.strokeRect(sel.x, sel.y, sel.width, sel.height);
+
+          // Handles
+          const handles = this.getHandles(sel);
+          handles.forEach(h => {
+            ctx.beginPath();
+            if (h.type === 'rot') {
+              ctx.arc(h.x, h.y, 7, 0, Math.PI * 2);
+              ctx.fillStyle = '#ff5722';
+            } else {
+              ctx.rect(h.x - 6, h.y - 6, 12, 12);
+              ctx.fillStyle = '#ffffff';
+            }
+            ctx.fill();
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+          });
+          ctx.restore();
+        }
+      }
+    }
+
+    drawRoundedRect(ctx, x, y, width, height, radius) {
+      ctx.beginPath();
+      ctx.roundRect ? ctx.roundRect(x, y, width, height, radius) : ctx.rect(x, y, width, height);
+    }
+
+    // Add elements
+    addText(customText = 'Novo Texto', customOpts = {}) {
+      const active = this.getActiveSlide();
+      if (!active) return;
+
+      const el = {
+        id: 'el_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+        type: 'text',
+        text: customText,
+        fontSize: customOpts.fontSize || 64,
+        fontFamily: customOpts.fontFamily || "'Montserrat', sans-serif",
+        fontWeight: customOpts.fontWeight || '900',
+        color: customOpts.color || '#ffffff',
+        align: customOpts.align || 'left',
+        rotation: 0,
+        opacity: 1,
+        shadow: { enabled: false, color: '#000000', blur: 12 },
+        stroke: { color: '#000000', width: 0 },
+        bg: customOpts.bg || { enabled: false, color: '#ff5722', padding: 12 },
+        x: customOpts.x || 100,
+        y: customOpts.y || Math.round(active.height / 2 - 50),
+        width: 300,
+        height: 80
+      };
+
+      active.elements.push(el);
+      active.selectedId = el.id;
+      this.saveHistory();
+      this.renderAll();
+      this.updateInspector();
+      this.renderLayers();
+    }
+
+    addBadge() {
+      const active = this.getActiveSlide();
+      if (!active) return;
+
+      const el = {
+        id: 'el_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+        type: 'shape',
+        color: '#ff5722',
+        borderRadius: 16,
+        opacity: 1,
+        rotation: 0,
+        x: 100,
+        y: Math.round(active.height / 2 - 60),
+        width: 480,
+        height: 120
+      };
+
+      active.elements.push(el);
+      active.selectedId = el.id;
+      this.saveHistory();
+      this.renderAll();
+      this.updateInspector();
+      this.renderLayers();
+    }
+
+    addImage(imgSource) {
+      const active = this.getActiveSlide();
+      if (!active) return;
+
+      const img = new Image();
+      img.onload = () => {
+        const maxWidth = Math.round(active.width * 0.7);
+        const maxHeight = Math.round(active.height * 0.6);
+        let w = img.naturalWidth || 400;
+        let h = img.naturalHeight || 300;
+
+        if (w > maxWidth || h > maxHeight) {
+          const ratio = Math.min(maxWidth / w, maxHeight / h);
+          w = Math.round(w * ratio);
+          h = Math.round(h * ratio);
+        }
+
+        const el = {
+          id: 'el_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+          type: 'image',
+          img,
+          x: Math.round((active.width - w) / 2),
+          y: Math.round((active.height - h) / 2),
+          width: w,
+          height: h,
+          opacity: 1,
+          borderRadius: 0,
+          rotation: 0,
+          shadow: { enabled: false, color: 'rgba(0,0,0,0.5)', blur: 20 }
+        };
+
+        active.elements.push(el);
+        active.selectedId = el.id;
+        this.saveHistory();
+        this.renderAll();
+        this.updateInspector();
+        this.renderLayers();
+        showToast('Imagem adicionada ao slide!', 'success');
+      };
+      img.src = imgSource;
+    }
+
+    // Zoom & Pan
+    updateZoomTransform() {
+      if (!carouselWorkspace) return;
+      carouselWorkspace.style.transform = `translate(${this.panX}px, ${this.panY}px) scale(${this.zoomLevel})`;
+      if (carouselZoomLevelDisplay) {
+        carouselZoomLevelDisplay.textContent = `${Math.round(this.zoomLevel * 100)}%`;
+      }
+    }
+
+    setZoom(level) {
+      this.zoomLevel = Math.min(Math.max(level, 0.2), 3.0);
+      this.updateZoomTransform();
+    }
+
+    zoomIn() { this.setZoom(this.zoomLevel + 0.1); }
+    zoomOut() { this.setZoom(this.zoomLevel - 0.1); }
+    resetZoom() {
+      this.zoomLevel = 0.95;
+      this.panX = 0;
+      this.panY = 0;
+      this.updateZoomTransform();
+    }
+
+    zoomFit() {
+      this.resetZoom();
+    }
+
+    // Export methods
+    async downloadZip() {
+      showToast('Gerando pacote ZIP com todos os slides...', 'info', 3000);
+
+      try {
+        if (typeof JSZip === 'undefined') {
+          this.downloadAllSlidesSequentially();
+          return;
+        }
+
+        const zip = new JSZip();
+        const folder = zip.folder('carrossel_tp_estudio');
+
+        for (let i = 0; i < this.slides.length; i++) {
+          const slide = this.slides[i];
+          const expCanvas = document.createElement('canvas');
+          expCanvas.width = slide.width;
+          expCanvas.height = slide.height;
+          const expCtx = expCanvas.getContext('2d');
+          this.renderSlideToContext(slide, expCtx, true, i, this.slides.length);
+
+          const blob = await new Promise(res => expCanvas.toBlob(res, 'image/png'));
+          const num = String(i + 1).padStart(2, '0');
+          folder.file(`slide_${num}.png`, blob);
+        }
+
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        const downloadUrl = URL.createObjectURL(zipBlob);
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = `carrossel_tp_estudio_${new Date().toISOString().slice(0, 10)}.zip`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(downloadUrl), 2000);
+
+        showToast('Carrossel completo baixado em ZIP!', 'success');
+      } catch (err) {
+        console.error('Erro ao gerar ZIP:', err);
+        this.downloadAllSlidesSequentially();
+      }
+    }
+
+    downloadAllSlidesSequentially() {
+      this.slides.forEach((s, i) => {
+        setTimeout(() => {
+          this.downloadSlideImage(s.id, 'png', i + 1);
+        }, i * 350);
+      });
+      showToast('Baixando slides sequencialmente...', 'success');
+    }
+
+    downloadSlideImage(slideId, format = 'png', slideIndex = null) {
+      const slide = this.slides.find(s => s.id === slideId) || this.getActiveSlide();
+      if (!slide) return;
+
+      const idx = slideIndex !== null ? slideIndex - 1 : this.slides.findIndex(s => s.id === slide.id);
+      const expCanvas = document.createElement('canvas');
+      expCanvas.width = slide.width;
+      expCanvas.height = slide.height;
+      const expCtx = expCanvas.getContext('2d');
+      this.renderSlideToContext(slide, expCtx, true, idx, this.slides.length);
+
+      const mime = format === 'jpg' ? 'image/jpeg' : 'image/png';
+      const ext = format === 'jpg' ? 'jpg' : 'png';
+      const num = String(idx + 1).padStart(2, '0');
+
+      expCanvas.toBlob(blob => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `slide_${num}_carrossel.${ext}`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 2000);
+        showToast(`Slide ${idx + 1} baixado!`, 'success');
+      }, mime, 0.95);
+    }
+
+    async copyCurrentSlideToClipboard() {
+      const slide = this.getActiveSlide();
+      if (!slide) return;
+
+      try {
+        const idx = this.slides.findIndex(s => s.id === slide.id);
+        const expCanvas = document.createElement('canvas');
+        expCanvas.width = slide.width;
+        expCanvas.height = slide.height;
+        const expCtx = expCanvas.getContext('2d');
+        this.renderSlideToContext(slide, expCtx, true, idx, this.slides.length);
+
+        expCanvas.toBlob(async blob => {
+          if (!blob) {
+            showToast('Erro ao copiar imagem.', 'error');
+            return;
+          }
+          await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+          showToast(`Slide ${idx + 1} copiado para a área de transferência!`, 'success');
+        }, 'image/png');
+      } catch (err) {
+        console.error('Erro ao copiar:', err);
+        showToast('Não foi possível copiar o slide diretamente.', 'error');
+      }
+    }
+
+    // Layers & Reordering
+    reorderElement(draggedId, targetId, insertAboveInUI = false) {
+      const active = this.getActiveSlide();
+      if (!active || draggedId === targetId) return;
+
+      const draggedIndex = active.elements.findIndex(el => el.id === draggedId);
+      const targetIndex = active.elements.findIndex(el => el.id === targetId);
+      if (draggedIndex === -1 || targetIndex === -1) return;
+
+      const [draggedEl] = active.elements.splice(draggedIndex, 1);
+      let newTargetIndex = active.elements.findIndex(el => el.id === targetId);
+      if (insertAboveInUI) newTargetIndex += 1;
+      active.elements.splice(newTargetIndex, 0, draggedEl);
+
+      active.selectedId = draggedEl.id;
+      this.saveHistory();
+      this.renderAll();
+      this.updateInspector();
+      this.renderLayers();
+    }
+
+    renderLayers() {
+      if (!carouselLayersContainer) return;
+      const active = this.getActiveSlide();
+      carouselLayersContainer.innerHTML = '';
+
+      if (!active || !active.elements || active.elements.length === 0) {
+        carouselLayersContainer.innerHTML = `<span style="font-size: 0.75rem; color: var(--text-dim);">Nenhuma camada</span>`;
+        return;
+      }
+
+      [...active.elements].reverse().forEach(el => {
+        const item = document.createElement('div');
+        item.className = `layer-item ${el.id === active.selectedId ? 'active' : ''}`;
+        item.draggable = true;
+
+        let icon = '📝';
+        let label = el.text ? el.text.slice(0, 16) : 'Texto';
+        if (el.type === 'image') { icon = '🖼️'; label = 'Imagem'; }
+        else if (el.type === 'shape') { icon = '⬛'; label = 'Tarja / Forma'; }
+
+        item.innerHTML = `
+          <span class="layer-drag-handle" title="Arrastar para reordenar">
+            <svg width="10" height="14" viewBox="0 0 10 16" fill="currentColor">
+              <circle cx="2.5" cy="2.5" r="1.5"/><circle cx="7.5" cy="2.5" r="1.5"/>
+              <circle cx="2.5" cy="8" r="1.5"/><circle cx="7.5" cy="8" r="1.5"/>
+              <circle cx="2.5" cy="13.5" r="1.5"/><circle cx="7.5" cy="13.5" r="1.5"/>
+            </svg>
+          </span>
+          <span class="layer-icon">${icon}</span>
+          <span style="flex: 1; margin-left: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(label)}</span>
+        `;
+
+        item.addEventListener('click', () => {
+          active.selectedId = el.id;
+          this.renderAll();
+          this.updateInspector();
+          this.renderLayers();
+        });
+
+        item.addEventListener('dragstart', (e) => {
+          item.classList.add('dragging');
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', el.id);
+          this._draggedLayerId = el.id;
+        });
+
+        item.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          if (this._draggedLayerId && this._draggedLayerId !== el.id) {
+            const rect = item.getBoundingClientRect();
+            const isTopHalf = (e.clientY - rect.top) < (rect.height / 2);
+            item.classList.toggle('drag-over-top', isTopHalf);
+            item.classList.toggle('drag-over-bottom', !isTopHalf);
+          }
+        });
+
+        item.addEventListener('dragleave', () => {
+          item.classList.remove('drag-over-top', 'drag-over-bottom');
+        });
+
+        item.addEventListener('drop', (e) => {
+          e.preventDefault();
+          item.classList.remove('drag-over-top', 'drag-over-bottom');
+          const draggedId = e.dataTransfer.getData('text/plain') || this._draggedLayerId;
+          if (draggedId && draggedId !== el.id) {
+            const rect = item.getBoundingClientRect();
+            const isTopHalf = (e.clientY - rect.top) < (rect.height / 2);
+            this.reorderElement(draggedId, el.id, isTopHalf);
+          }
+        });
+
+        item.addEventListener('dragend', () => {
+          item.classList.remove('dragging');
+          carouselLayersContainer.querySelectorAll('.layer-item').forEach(i => {
+            i.classList.remove('drag-over-top', 'drag-over-bottom');
+          });
+          this._draggedLayerId = null;
+        });
+
+        carouselLayersContainer.appendChild(item);
+      });
+    }
+
+    updateInspector() {
+      const active = this.getActiveSlide();
+      const sel = active ? active.elements.find(el => el.id === active.selectedId) : null;
+
+      if (!sel) {
+        if (carouselEmptySelectionMsg) carouselEmptySelectionMsg.classList.remove('hidden');
+        if (carouselTextInspector) carouselTextInspector.classList.add('hidden');
+        if (carouselImageInspector) carouselImageInspector.classList.add('hidden');
+        if (carouselShapeInspector) carouselShapeInspector.classList.add('hidden');
+        return;
+      }
+
+      if (carouselEmptySelectionMsg) carouselEmptySelectionMsg.classList.add('hidden');
+      if (carouselTextInspector) carouselTextInspector.classList.toggle('hidden', sel.type !== 'text');
+      if (carouselImageInspector) carouselImageInspector.classList.toggle('hidden', sel.type !== 'image');
+      if (carouselShapeInspector) carouselShapeInspector.classList.toggle('hidden', sel.type !== 'shape');
+
+      if (sel.type === 'text') {
+        carouselPropTextContent.value = sel.text || '';
+        carouselPropFontFamily.value = sel.fontFamily || "'Montserrat', sans-serif";
+        carouselPropFontSize.value = sel.fontSize || 64;
+        carouselPropTextColor.value = sel.color || '#ffffff';
+        carouselPropTextColorHex.textContent = sel.color || '#ffffff';
+        carouselPropFontWeight.value = sel.fontWeight || '900';
+        carouselPropRotation.value = sel.rotation || 0;
+        carouselPropStrokeColor.value = sel.stroke ? sel.stroke.color : '#000000';
+        carouselPropStrokeWidth.value = sel.stroke ? sel.stroke.width : 0;
+        carouselPropShadowEnabled.checked = sel.shadow ? sel.shadow.enabled : false;
+        carouselPropShadowColor.value = sel.shadow ? sel.shadow.color : '#000000';
+        carouselPropShadowBlur.value = sel.shadow ? sel.shadow.blur : 12;
+        carouselPropBgEnabled.checked = sel.bg ? sel.bg.enabled : false;
+        carouselPropBgColor.value = sel.bg ? sel.bg.color : '#ff5722';
+        carouselPropBgPadding.value = sel.bg ? sel.bg.padding : 12;
+        carouselPropOpacity.value = Math.round((sel.opacity !== undefined ? sel.opacity : 1) * 100);
+        carouselPropOpacityVal.textContent = carouselPropOpacity.value;
+
+        // Alignment buttons
+        carouselTextInspector.querySelectorAll('.btn-seg').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.align === (sel.align || 'left'));
+        });
+      } else if (sel.type === 'image') {
+        carouselPropImgWidth.value = sel.width;
+        carouselPropImgHeight.value = sel.height;
+        carouselPropImgOpacity.value = Math.round((sel.opacity !== undefined ? sel.opacity : 1) * 100);
+        carouselPropImgOpacityVal.textContent = carouselPropImgOpacity.value;
+        carouselPropImgRadius.value = sel.borderRadius || 0;
+        carouselPropImgRadiusVal.textContent = sel.borderRadius || 0;
+        carouselPropImgShadow.checked = sel.shadow ? sel.shadow.enabled : false;
+        carouselPropImgRotation.value = sel.rotation || 0;
+      } else if (sel.type === 'shape') {
+        carouselPropShapeColor.value = sel.color || '#ff5722';
+        carouselPropShapeColorHex.textContent = sel.color || '#ff5722';
+        carouselPropShapeRadius.value = sel.borderRadius || 12;
+        carouselPropShapeOpacity.value = Math.round((sel.opacity !== undefined ? sel.opacity : 1) * 100);
+        carouselPropShapeOpacityVal.textContent = carouselPropShapeOpacity.value;
+      }
+    }
+
+    // History
+    saveHistory() {
+      const snapshot = this.getSnapshot();
+      if (this.historyIndex < this.history.length - 1) {
+        this.history = this.history.slice(0, this.historyIndex + 1);
+      }
+      this.history.push(snapshot);
+      if (this.history.length > 25) this.history.shift();
+      this.historyIndex = this.history.length - 1;
+      this.updateUndoRedoButtons();
+    }
+
+    getSnapshot() {
+      return JSON.stringify(this.slides.map(s => ({
+        id: s.id,
+        name: s.name,
+        width: s.width,
+        height: s.height,
+        bgColor: s.bgColor,
+        elements: s.elements.map(el => {
+          const copy = { ...el };
+          if (copy.img) delete copy.img;
+          return copy;
+        })
+      })));
+    }
+
+    undo() {
+      if (this.historyIndex > 0) {
+        this.historyIndex--;
+        this.loadSnapshot(this.history[this.historyIndex]);
+        this.updateUndoRedoButtons();
+      }
+    }
+
+    redo() {
+      if (this.historyIndex < this.history.length - 1) {
+        this.historyIndex++;
+        this.loadSnapshot(this.history[this.historyIndex]);
+        this.updateUndoRedoButtons();
+      }
+    }
+
+    updateUndoRedoButtons() {
+      if (carouselUndoBtn) carouselUndoBtn.disabled = this.historyIndex <= 0;
+      if (carouselRedoBtn) carouselRedoBtn.disabled = this.historyIndex >= this.history.length - 1;
+    }
+
+    loadSnapshot(jsonStr) {
+      try {
+        const data = JSON.parse(jsonStr);
+        data.forEach(item => {
+          const s = this.slides.find(slide => slide.id === item.id);
+          if (s) {
+            s.width = item.width;
+            s.height = item.height;
+            s.bgColor = item.bgColor;
+            s.elements = item.elements;
+          }
+        });
+        this.renderAll();
+        this.renderLayers();
+        this.updateInspector();
+      } catch (e) {
+        console.error('Erro ao carregar histórico:', e);
+      }
+    }
+
+    setupEventListeners() {
+      // Preset selection
+      if (carouselPresetSelect) {
+        carouselPresetSelect.addEventListener('change', (e) => this.setPreset(e.target.value));
+      }
+
+      // Slide toolbar buttons
+      if (carouselAddSlideBtn) carouselAddSlideBtn.addEventListener('click', () => this.addSlide());
+      if (carouselStripAddBtn) carouselStripAddBtn.addEventListener('click', () => this.addSlide());
+      if (carouselDuplicateSlideBtn) carouselDuplicateSlideBtn.addEventListener('click', () => this.duplicateSlide());
+      if (carouselDeleteSlideBtn) carouselDeleteSlideBtn.addEventListener('click', () => this.deleteSlide());
+      if (carouselToggleNumberingBtn) carouselToggleNumberingBtn.addEventListener('click', () => this.toggleNumbering());
+
+      // Undo / Redo
+      if (carouselUndoBtn) carouselUndoBtn.addEventListener('click', () => this.undo());
+      if (carouselRedoBtn) carouselRedoBtn.addEventListener('click', () => this.redo());
+
+      // Clear
+      if (carouselClearBtn) {
+        carouselClearBtn.addEventListener('click', () => {
+          if (confirm('Deseja reiniciar o carrossel com os 3 slides padrão?')) {
+            this.setupInitialSlides();
+            this.saveHistory();
+            showToast('Carrossel reiniciado!', 'info');
+          }
+        });
+      }
+
+      // Shortcuts modal
+      if (carouselShortcutsModalBtn) {
+        carouselShortcutsModalBtn.addEventListener('click', () => {
+          const modal = document.getElementById('shortcutsModal');
+          if (modal) modal.classList.remove('hidden');
+        });
+      }
+
+      // Tool buttons
+      if (carouselToolAddText) carouselToolAddText.addEventListener('click', () => this.addText('Novo Texto'));
+      if (carouselToolAddBadge) carouselToolAddBadge.addEventListener('click', () => this.addBadge());
+
+      // Quick CTA buttons
+      document.querySelectorAll('.carousel-cta-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const cta = btn.dataset.cta;
+          if (cta === 'swipe') {
+            this.addText('Arraste para o lado 👉', {
+              fontSize: 34,
+              fontFamily: "'Poppins', sans-serif",
+              fontWeight: '700',
+              y: this.height - 140,
+              bg: { enabled: true, color: '#ff5722', padding: 12 }
+            });
+          } else if (cta === 'save') {
+            this.addText('Salve para ler depois 📌', {
+              fontSize: 34,
+              fontFamily: "'Poppins', sans-serif",
+              fontWeight: '700',
+              y: this.height - 140,
+              bg: { enabled: true, color: '#3b0764', padding: 12 }
+            });
+          } else if (cta === 'hook') {
+            this.addText('TÍTULO IMPACTANTE\nDO SEU POST', {
+              fontSize: 84,
+              fontFamily: "'Montserrat', sans-serif",
+              fontWeight: '900',
+              y: 400
+            });
+          }
+        });
+      });
+
+      // Image upload
+      if (carouselToolUploadImage && carouselImageFileInput) {
+        carouselToolUploadImage.addEventListener('click', () => carouselImageFileInput.click());
+        carouselImageFileInput.addEventListener('change', (e) => {
+          const file = e.target.files[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = (ev) => this.addImage(ev.target.result);
+            reader.readAsDataURL(file);
+          }
+          carouselImageFileInput.value = '';
+        });
+      }
+
+      // Pan toggle button
+      if (carouselToolPanCanvas) {
+        carouselToolPanCanvas.addEventListener('click', () => {
+          this.isPanMode = !this.isPanMode;
+          carouselToolPanCanvas.classList.toggle('active', this.isPanMode);
+          if (carouselPanModeToggleBtn) carouselPanModeToggleBtn.classList.toggle('active', this.isPanMode);
+        });
+      }
+      if (carouselPanModeToggleBtn) {
+        carouselPanModeToggleBtn.addEventListener('click', () => {
+          this.isPanMode = !this.isPanMode;
+          if (carouselToolPanCanvas) carouselToolPanCanvas.classList.toggle('active', this.isPanMode);
+          carouselPanModeToggleBtn.classList.toggle('active', this.isPanMode);
+        });
+      }
+
+      // Background swatches
+      if (carouselBgSwatches) {
+        carouselBgSwatches.querySelectorAll('.swatch-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const color = btn.dataset.color;
+            const active = this.getActiveSlide();
+            if (active) {
+              active.bgColor = color;
+              if (carouselBgColorInput) carouselBgColorInput.value = color;
+              this.renderAll();
+              this.saveHistory();
+            }
+          });
+        });
+      }
+
+      if (carouselBgColorInput) {
+        carouselBgColorInput.addEventListener('input', (e) => {
+          const active = this.getActiveSlide();
+          if (active) {
+            active.bgColor = e.target.value;
+            this.renderAll();
+          }
+        });
+        carouselBgColorInput.addEventListener('change', () => this.saveHistory());
+      }
+
+      // Zoom buttons
+      if (carouselZoomInBtn) carouselZoomInBtn.addEventListener('click', () => this.zoomIn());
+      if (carouselZoomOutBtn) carouselZoomOutBtn.addEventListener('click', () => this.zoomOut());
+      if (carouselZoomResetBtn) carouselZoomResetBtn.addEventListener('click', () => this.resetZoom());
+      if (carouselZoomFitBtn) carouselZoomFitBtn.addEventListener('click', () => this.zoomFit());
+
+      // Export dropdown
+      if (carouselExportDropdownBtn && carouselExportDropdownMenu) {
+        carouselExportDropdownBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          carouselExportDropdownMenu.classList.toggle('hidden');
+        });
+
+        document.addEventListener('click', (e) => {
+          if (carouselExportDropdownWrapper && !carouselExportDropdownWrapper.contains(e.target)) {
+            carouselExportDropdownMenu.classList.add('hidden');
+          }
+        });
+
+        carouselExportDropdownMenu.querySelectorAll('.export-menu-item').forEach(item => {
+          item.addEventListener('click', () => {
+            const fmt = item.getAttribute('data-carousel-format');
+            carouselExportDropdownMenu.classList.add('hidden');
+
+            if (fmt === 'zip') {
+              this.downloadZip();
+            } else if (fmt === 'copy') {
+              this.copyCurrentSlideToClipboard();
+            } else {
+              this.downloadSlideImage(this.activeSlideId, fmt);
+            }
+          });
+        });
+      }
+
+      // Text property inspectors listeners
+      if (carouselPropTextContent) {
+        carouselPropTextContent.addEventListener('input', (e) => {
+          const active = this.getActiveSlide();
+          const sel = active ? active.elements.find(el => el.id === active.selectedId) : null;
+          if (sel && sel.type === 'text') {
+            sel.text = e.target.value;
+            this.renderAll();
+            this.renderLayers();
+          }
+        });
+      }
+
+      if (carouselPropFontFamily) {
+        carouselPropFontFamily.addEventListener('change', (e) => {
+          const active = this.getActiveSlide();
+          const sel = active ? active.elements.find(el => el.id === active.selectedId) : null;
+          if (sel && sel.type === 'text') {
+            sel.fontFamily = e.target.value;
+            this.renderAll();
+            this.saveHistory();
+          }
+        });
+      }
+
+      if (carouselPropFontSize) {
+        carouselPropFontSize.addEventListener('input', (e) => {
+          const active = this.getActiveSlide();
+          const sel = active ? active.elements.find(el => el.id === active.selectedId) : null;
+          if (sel && sel.type === 'text') {
+            sel.fontSize = parseInt(e.target.value, 10) || 60;
+            this.renderAll();
+          }
+        });
+        carouselPropFontSize.addEventListener('change', () => this.saveHistory());
+      }
+
+      if (carouselPropTextColor) {
+        carouselPropTextColor.addEventListener('input', (e) => {
+          const active = this.getActiveSlide();
+          const sel = active ? active.elements.find(el => el.id === active.selectedId) : null;
+          if (sel && sel.type === 'text') {
+            sel.color = e.target.value;
+            carouselPropTextColorHex.textContent = e.target.value;
+            this.renderAll();
+          }
+        });
+        carouselPropTextColor.addEventListener('change', () => this.saveHistory());
+      }
+
+      if (carouselPropFontWeight) {
+        carouselPropFontWeight.addEventListener('change', (e) => {
+          const active = this.getActiveSlide();
+          const sel = active ? active.elements.find(el => el.id === active.selectedId) : null;
+          if (sel && sel.type === 'text') {
+            sel.fontWeight = e.target.value;
+            this.renderAll();
+            this.saveHistory();
+          }
+        });
+      }
+
+      if (carouselTextInspector) {
+        carouselTextInspector.querySelectorAll('.btn-seg').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const active = this.getActiveSlide();
+            const sel = active ? active.elements.find(el => el.id === active.selectedId) : null;
+            if (sel && sel.type === 'text') {
+              sel.align = btn.dataset.align;
+              carouselTextInspector.querySelectorAll('.btn-seg').forEach(b => b.classList.remove('active'));
+              btn.classList.add('active');
+              this.renderAll();
+              this.saveHistory();
+            }
+          });
+        });
+      }
+
+      if (carouselPropRotation) {
+        carouselPropRotation.addEventListener('input', (e) => {
+          const active = this.getActiveSlide();
+          const sel = active ? active.elements.find(el => el.id === active.selectedId) : null;
+          if (sel) {
+            sel.rotation = parseInt(e.target.value, 10) || 0;
+            this.renderAll();
+          }
+        });
+      }
+
+      if (carouselPropStrokeWidth && carouselPropStrokeColor) {
+        const updateStroke = () => {
+          const active = this.getActiveSlide();
+          const sel = active ? active.elements.find(el => el.id === active.selectedId) : null;
+          if (sel && sel.type === 'text') {
+            sel.stroke = {
+              width: parseInt(carouselPropStrokeWidth.value, 10) || 0,
+              color: carouselPropStrokeColor.value
+            };
+            this.renderAll();
+          }
+        };
+        carouselPropStrokeWidth.addEventListener('input', updateStroke);
+        carouselPropStrokeColor.addEventListener('input', updateStroke);
+      }
+
+      if (carouselPropShadowEnabled && carouselPropShadowColor && carouselPropShadowBlur) {
+        const updateShadow = () => {
+          const active = this.getActiveSlide();
+          const sel = active ? active.elements.find(el => el.id === active.selectedId) : null;
+          if (sel) {
+            sel.shadow = {
+              enabled: carouselPropShadowEnabled.checked,
+              color: carouselPropShadowColor.value,
+              blur: parseInt(carouselPropShadowBlur.value, 10) || 12
+            };
+            this.renderAll();
+          }
+        };
+        carouselPropShadowEnabled.addEventListener('change', updateShadow);
+        carouselPropShadowColor.addEventListener('input', updateShadow);
+        carouselPropShadowBlur.addEventListener('input', updateShadow);
+      }
+
+      if (carouselPropBgEnabled && carouselPropBgColor && carouselPropBgPadding) {
+        const updateBg = () => {
+          const active = this.getActiveSlide();
+          const sel = active ? active.elements.find(el => el.id === active.selectedId) : null;
+          if (sel && sel.type === 'text') {
+            sel.bg = {
+              enabled: carouselPropBgEnabled.checked,
+              color: carouselPropBgColor.value,
+              padding: parseInt(carouselPropBgPadding.value, 10) || 12
+            };
+            this.renderAll();
+          }
+        };
+        carouselPropBgEnabled.addEventListener('change', updateBg);
+        carouselPropBgColor.addEventListener('input', updateBg);
+        carouselPropBgPadding.addEventListener('input', updateBg);
+      }
+
+      if (carouselPropOpacity) {
+        carouselPropOpacity.addEventListener('input', (e) => {
+          const active = this.getActiveSlide();
+          const sel = active ? active.elements.find(el => el.id === active.selectedId) : null;
+          if (sel) {
+            sel.opacity = parseInt(e.target.value, 10) / 100;
+            carouselPropOpacityVal.textContent = e.target.value;
+            this.renderAll();
+          }
+        });
+      }
+
+      // Duplicate / Delete from inspector
+      const deleteActiveElement = () => {
+        const active = this.getActiveSlide();
+        if (active && active.selectedId) {
+          const idx = active.elements.findIndex(el => el.id === active.selectedId);
+          if (idx !== -1) {
+            active.elements.splice(idx, 1);
+            active.selectedId = null;
+            this.saveHistory();
+            this.renderAll();
+            this.updateInspector();
+            this.renderLayers();
+          }
+        }
+      };
+
+      const duplicateActiveElement = () => {
+        const active = this.getActiveSlide();
+        if (active && active.selectedId) {
+          const sel = active.elements.find(el => el.id === active.selectedId);
+          if (sel) {
+            const clone = JSON.parse(JSON.stringify(sel));
+            clone.id = 'el_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+            clone.x += 30;
+            clone.y += 30;
+            if (sel.img) clone.img = sel.img;
+            active.elements.push(clone);
+            active.selectedId = clone.id;
+            this.saveHistory();
+            this.renderAll();
+            this.updateInspector();
+            this.renderLayers();
+          }
+        }
+      };
+
+      if (carouselBtnDeleteText) carouselBtnDeleteText.addEventListener('click', deleteActiveElement);
+      if (carouselBtnDuplicateText) carouselBtnDuplicateText.addEventListener('click', duplicateActiveElement);
+      if (carouselBtnDeleteImg) carouselBtnDeleteImg.addEventListener('click', deleteActiveElement);
+      if (carouselBtnDuplicateImg) carouselBtnDuplicateImg.addEventListener('click', duplicateActiveElement);
+      if (carouselBtnDeleteShape) carouselBtnDeleteShape.addEventListener('click', deleteActiveElement);
+      if (carouselBtnDuplicateShape) carouselBtnDuplicateShape.addEventListener('click', duplicateActiveElement);
+
+      // Image properties
+      if (carouselPropImgWidth) {
+        carouselPropImgWidth.addEventListener('input', (e) => {
+          const active = this.getActiveSlide();
+          const sel = active ? active.elements.find(el => el.id === active.selectedId) : null;
+          if (sel && sel.type === 'image') {
+            sel.width = parseInt(e.target.value, 10) || 50;
+            this.renderAll();
+          }
+        });
+        carouselPropImgWidth.addEventListener('change', () => this.saveHistory());
+      }
+
+      if (carouselPropImgHeight) {
+        carouselPropImgHeight.addEventListener('input', (e) => {
+          const active = this.getActiveSlide();
+          const sel = active ? active.elements.find(el => el.id === active.selectedId) : null;
+          if (sel && sel.type === 'image') {
+            sel.height = parseInt(e.target.value, 10) || 50;
+            this.renderAll();
+          }
+        });
+        carouselPropImgHeight.addEventListener('change', () => this.saveHistory());
+      }
+
+      if (carouselPropImgOpacity) {
+        carouselPropImgOpacity.addEventListener('input', (e) => {
+          const active = this.getActiveSlide();
+          const sel = active ? active.elements.find(el => el.id === active.selectedId) : null;
+          if (sel && sel.type === 'image') {
+            sel.opacity = parseInt(e.target.value, 10) / 100;
+            if (carouselPropImgOpacityVal) carouselPropImgOpacityVal.textContent = e.target.value;
+            this.renderAll();
+          }
+        });
+        carouselPropImgOpacity.addEventListener('change', () => this.saveHistory());
+      }
+
+      if (carouselPropImgRadius) {
+        carouselPropImgRadius.addEventListener('input', (e) => {
+          const active = this.getActiveSlide();
+          const sel = active ? active.elements.find(el => el.id === active.selectedId) : null;
+          if (sel && sel.type === 'image') {
+            sel.borderRadius = parseInt(e.target.value, 10) || 0;
+            if (carouselPropImgRadiusVal) carouselPropImgRadiusVal.textContent = sel.borderRadius;
+            this.renderAll();
+          }
+        });
+        carouselPropImgRadius.addEventListener('change', () => this.saveHistory());
+      }
+
+      if (carouselPropImgShadow) {
+        carouselPropImgShadow.addEventListener('change', (e) => {
+          const active = this.getActiveSlide();
+          const sel = active ? active.elements.find(el => el.id === active.selectedId) : null;
+          if (sel && sel.type === 'image') {
+            if (!sel.shadow) {
+              sel.shadow = { enabled: false, color: 'rgba(0,0,0,0.5)', blur: 20 };
+            }
+            sel.shadow.enabled = e.target.checked;
+            this.renderAll();
+            this.saveHistory();
+          }
+        });
+      }
+
+      if (carouselPropImgRotation) {
+        carouselPropImgRotation.addEventListener('input', (e) => {
+          const active = this.getActiveSlide();
+          const sel = active ? active.elements.find(el => el.id === active.selectedId) : null;
+          if (sel && sel.type === 'image') {
+            sel.rotation = parseInt(e.target.value, 10) || 0;
+            this.renderAll();
+          }
+        });
+        carouselPropImgRotation.addEventListener('change', () => this.saveHistory());
+      }
+
+      // Shape properties
+      if (carouselPropShapeColor) {
+        carouselPropShapeColor.addEventListener('input', (e) => {
+          const active = this.getActiveSlide();
+          const sel = active ? active.elements.find(el => el.id === active.selectedId) : null;
+          if (sel && sel.type === 'shape') {
+            sel.color = e.target.value;
+            if (carouselPropShapeColorHex) carouselPropShapeColorHex.textContent = e.target.value;
+            this.renderAll();
+          }
+        });
+        carouselPropShapeColor.addEventListener('change', () => this.saveHistory());
+      }
+
+      if (carouselPropShapeRadius) {
+        carouselPropShapeRadius.addEventListener('input', (e) => {
+          const active = this.getActiveSlide();
+          const sel = active ? active.elements.find(el => el.id === active.selectedId) : null;
+          if (sel && sel.type === 'shape') {
+            sel.borderRadius = parseInt(e.target.value, 10) || 0;
+            this.renderAll();
+          }
+        });
+        carouselPropShapeRadius.addEventListener('change', () => this.saveHistory());
+      }
+
+      if (carouselPropShapeOpacity) {
+        carouselPropShapeOpacity.addEventListener('input', (e) => {
+          const active = this.getActiveSlide();
+          const sel = active ? active.elements.find(el => el.id === active.selectedId) : null;
+          if (sel && sel.type === 'shape') {
+            sel.opacity = parseInt(e.target.value, 10) / 100;
+            if (carouselPropShapeOpacityVal) carouselPropShapeOpacityVal.textContent = e.target.value;
+            this.renderAll();
+          }
+        });
+        carouselPropShapeOpacity.addEventListener('change', () => this.saveHistory());
+      }
+
+      // Viewport Pan and Zoom
+      if (carouselViewport) {
+        carouselViewport.addEventListener('wheel', (e) => {
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? -0.06 : 0.06;
+            this.setZoom(this.zoomLevel + delta);
+          } else {
+            e.preventDefault();
+            this.panX -= e.deltaX;
+            this.panY -= e.deltaY;
+            this.updateZoomTransform();
+          }
+        }, { passive: false });
+
+        carouselViewport.addEventListener('mousedown', (e) => {
+          if (this.isPanMode || this.isSpacePressed || e.button === 1 || e.target === carouselViewport || e.target === carouselWorkspace) {
+            this.isPanning = true;
+            this.panStartX = e.clientX - this.panX;
+            this.panStartY = e.clientY - this.panY;
+            carouselViewport.style.cursor = 'grabbing';
+          }
+        });
+      }
+
+      // Window drag & move listeners
+      window.addEventListener('mousemove', (e) => {
+        if (this.isPanning) {
+          this.panX = e.clientX - this.panStartX;
+          this.panY = e.clientY - this.panStartY;
+          this.updateZoomTransform();
+          return;
+        }
+
+        const active = this.getActiveSlide();
+        if (!active || !active.selectedId) return;
+        const sel = active.elements.find(el => el.id === active.selectedId);
+        if (!sel) return;
+
+        const rect = active.canvasEl.getBoundingClientRect();
+        const scaleX = active.width / rect.width;
+        const scaleY = active.height / rect.height;
+        const curX = (e.clientX - rect.left) * scaleX;
+        const curY = (e.clientY - rect.top) * scaleY;
+
+        if (this.isDragging) {
+          const dx = curX - this.dragStartX;
+          const dy = curY - this.dragStartY;
+          sel.x = Math.round(this.initialElementState.x + dx);
+          sel.y = Math.round(this.initialElementState.y + dy);
+          this.renderAll();
+        } else if (this.isResizing) {
+          const dx = curX - this.dragStartX;
+          const dy = curY - this.dragStartY;
+          if (this.activeHandle === 'br') {
+            sel.width = Math.max(30, Math.round(this.initialElementState.width + dx));
+            sel.height = Math.max(20, Math.round(this.initialElementState.height + dy));
+          } else if (this.activeHandle === 'bl') {
+            sel.x = Math.round(this.initialElementState.x + dx);
+            sel.width = Math.max(30, Math.round(this.initialElementState.width - dx));
+            sel.height = Math.max(20, Math.round(this.initialElementState.height + dy));
+          } else if (this.activeHandle === 'tr') {
+            sel.y = Math.round(this.initialElementState.y + dy);
+            sel.width = Math.max(30, Math.round(this.initialElementState.width + dx));
+            sel.height = Math.max(20, Math.round(this.initialElementState.height - dy));
+          } else if (this.activeHandle === 'tl') {
+            sel.x = Math.round(this.initialElementState.x + dx);
+            sel.y = Math.round(this.initialElementState.y + dy);
+            sel.width = Math.max(30, Math.round(this.initialElementState.width - dx));
+            sel.height = Math.max(20, Math.round(this.initialElementState.height - dy));
+          }
+          this.renderAll();
+        } else if (this.isRotating) {
+          const cx = sel.x + sel.width / 2;
+          const cy = sel.y + sel.height / 2;
+          const rad = Math.atan2(curY - cy, curX - cx);
+          let deg = Math.round(rad * 180 / Math.PI) + 90;
+          if (deg > 180) deg -= 360;
+          sel.rotation = deg;
+          if (carouselPropRotation) carouselPropRotation.value = deg;
+          this.renderAll();
+        }
+      });
+
+      window.addEventListener('mouseup', () => {
+        if (this.isPanning) {
+          this.isPanning = false;
+          if (carouselViewport) carouselViewport.style.cursor = this.isPanMode ? 'grab' : 'default';
+        }
+        if (this.isDragging || this.isResizing || this.isRotating) {
+          this.isDragging = false;
+          this.isResizing = false;
+          this.isRotating = false;
+          this.activeHandle = null;
+          this.saveHistory();
+          this.updateInspector();
+        }
+      });
+
+      // Keyboard space for panning and shortcuts
+      window.addEventListener('keydown', (e) => {
+        const carouselPane = document.getElementById('carouselTab');
+        if (!carouselPane || !carouselPane.classList.contains('active')) return;
+        if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return;
+
+        if (e.code === 'Space' && !this.isSpacePressed) {
+          this.isSpacePressed = true;
+          if (carouselViewport) carouselViewport.style.cursor = 'grab';
+        }
+
+        if (e.key === 'Delete' || e.key === 'Backspace') {
+          deleteActiveElement();
+        }
+
+        if (e.ctrlKey || e.metaKey) {
+          if (e.key === 'z' || e.key === 'Z') {
+            e.preventDefault();
+            e.shiftKey ? this.redo() : this.undo();
+          } else if (e.key === 'y' || e.key === 'Y') {
+            e.preventDefault();
+            this.redo();
+          } else if (e.key === '0') {
+            e.preventDefault();
+            this.resetZoom();
+          }
+        }
+      });
+
+      window.addEventListener('keyup', (e) => {
+        if (e.code === 'Space') {
+          this.isSpacePressed = false;
+          if (carouselViewport) carouselViewport.style.cursor = this.isPanMode ? 'grab' : 'default';
+        }
+      });
+
+      // Global paste listener (Ctrl+V) for Carousel tab
+      window.addEventListener('paste', (e) => {
+        const carouselPane = document.getElementById('carouselTab');
+        if (!carouselPane || !carouselPane.classList.contains('active')) return;
+        if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+
+        const items = e.clipboardData?.items;
+        if (!items) return;
+
+        for (let item of items) {
+          if (item.type.indexOf('image') !== -1) {
+            e.preventDefault();
+            const blob = item.getAsFile();
+            const reader = new FileReader();
+            reader.onload = (ev) => this.addImage(ev.target.result);
+            reader.readAsDataURL(blob);
+            break;
+          }
+        }
+      });
+    }
+  }
+
+  const carouselEngine = new CarouselEngine();
+  window.carouselEngine = carouselEngine;
 
 });

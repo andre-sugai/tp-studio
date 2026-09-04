@@ -1,4 +1,4 @@
-# Netlify Configuration for Canivete TP Dashboard
+# Netlify Configuration for TP Estúdio Dashboard
 [build]
   publish = "."
 

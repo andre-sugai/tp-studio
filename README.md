@@ -1,4 +1,4 @@
-# Canivete TP - Web Dashboard & Estúdio de Thumbnails
+# TP Estúdio - Web Dashboard & Estúdio de Thumbnails
 
 Dashboard independente com Gerenciador de Templates de Texto e Criador de Thumbnails para YouTube, pronto para hospedagem no **Netlify**, **Vercel** ou **GitHub Pages**.
 
@@ -48,5 +48,12 @@ npx netlify-cli deploy --prod --dir=.
   - **Zoom Fluído & Pan da Área de Trabalho:** Zoom pelo scroll do mouse ou botões flutuantes, e navegação livre pela prancheta (arraste pelo fundo, ferramenta mão `H` ou segurando `Espaço`).
   - **Modal de Atalhos Rápidos:** Visualizador completo de atalhos de teclado e gestos disponível via botão ou pela tecla `?`.
   - Exportação em PNG de alta definição, JPG otimizado e botão de copiar imagem para a Área de Transferência.
+- **Criador de Carrosséis (Instagram & YouTube Comunidade):**
+  - Criação contínua de múltiplos slides lado a lado para alinhamento panorâmico perfeito.
+  - Presets otimizados: **Instagram Retrato (4:5 · 1080×1350)**, **Instagram / YouTube Quadrado (1:1 · 1080×1080)** e **Stories / Reels (9:16 · 1080×1920)**.
+  - Gerenciamento ágil de slides: adicionar, duplicar, excluir e reordenar com faixa de miniaturas interativa.
+  - Numeração automática inteligente de slides (`1/N`, `2/N`, etc.).
+  - CTAs rápidos pré-configurados (*Arraste 👉, Salvar 📌, Gancho 🔥*).
+  - Exportação em lote de todos os slides compactados em arquivo **ZIP** de alta resolução, exportação de slide individual (PNG/JPG) e cópia para Área de Transferência.
 - **Barra Lateral Retrátil e Fluída:** Recolhimento/expansão animada via botão ou atalho `Ctrl+B` com persistência no navegador.
 - **Armazenamento Local:** 100% no navegador via `localStorage` (seus dados ficam salvos sem depender de servidores).

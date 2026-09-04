@@ -1,7 +1,7 @@
 {
   "name": "tp-studio",
-  "version": "1.16.1",
-  "description": "Canivete TP - Web Dashboard & Estúdio de Thumbnails",
+  "version": "1.18.0",
+  "description": "TP Estúdio - Web Dashboard & Estúdio de Thumbnails",
   "scripts": {
     "start": "npx serve ."
   },
