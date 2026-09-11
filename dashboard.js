@@ -1017,6 +1017,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const canvasViewport = document.getElementById('canvasViewport');
   const canvasWorkspace = document.getElementById('canvasWorkspace');
   const toggleSafeZoneBtn = document.getElementById('toggleSafeZoneBtn');
+  const toggleSnappingBtn = document.getElementById('toggleSnappingBtn');
   const clearCanvasBtn = document.getElementById('clearCanvasBtn');
   const undoBtn = document.getElementById('undoBtn');
   const redoBtn = document.getElementById('redoBtn');
@@ -1048,6 +1049,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const swatchBtns = document.querySelectorAll('.swatch-btn');
   const layersContainer = document.getElementById('layersContainer');
 
+  // Background Gradient Controls
+  const btnBgModeSolid = document.getElementById('btnBgModeSolid');
+  const btnBgModeGradient = document.getElementById('btnBgModeGradient');
+  const bgSolidControls = document.getElementById('bgSolidControls');
+  const bgGradientControls = document.getElementById('bgGradientControls');
+  const canvasBgGradColor1 = document.getElementById('canvasBgGradColor1');
+  const canvasBgGradColor2 = document.getElementById('canvasBgGradColor2');
+  const canvasBgGradDir = document.getElementById('canvasBgGradDir');
+  const bgGradientPresets = document.getElementById('bgGradientPresets');
+
   // Right Inspector
   const emptySelectionMsg = document.getElementById('emptySelectionMsg');
   const textInspector = document.getElementById('textInspector');
@@ -1059,9 +1070,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const propTextContent = document.getElementById('propTextContent');
   const propFontFamily = document.getElementById('propFontFamily');
   const propFontSize = document.getElementById('propFontSize');
+  const btnTextFillSolid = document.getElementById('btnTextFillSolid');
+  const btnTextFillGradient = document.getElementById('btnTextFillGradient');
+  const textSolidColorGroup = document.getElementById('textSolidColorGroup');
+  const textGradientGroup = document.getElementById('textGradientGroup');
   const propTextColor = document.getElementById('propTextColor');
   const propTextColorHex = document.getElementById('propTextColorHex');
   const propFontWeight = document.getElementById('propFontWeight');
+  const propTextGradColor1 = document.getElementById('propTextGradColor1');
+  const propTextGradColor2 = document.getElementById('propTextGradColor2');
+  const propTextGradDir = document.getElementById('propTextGradDir');
+  const propFontWeightGrad = document.getElementById('propFontWeightGrad');
+  const textGradientPresets = document.getElementById('textGradientPresets');
   const propStrokeEnabled = document.getElementById('propStrokeEnabled');
   const strokeControls = document.getElementById('strokeControls');
   const propStrokeColor = document.getElementById('propStrokeColor');
@@ -1102,11 +1122,43 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnResetAspect = document.getElementById('btnResetAspect');
 
   // Shape Inspector Fields
+  const btnShapeFillSolid = document.getElementById('btnShapeFillSolid');
+  const btnShapeFillGradient = document.getElementById('btnShapeFillGradient');
+  const shapeSolidColorGroup = document.getElementById('shapeSolidColorGroup');
+  const shapeGradientGroup = document.getElementById('shapeGradientGroup');
   const propShapeColor = document.getElementById('propShapeColor');
+  const propShapeColorHex = document.getElementById('propShapeColorHex');
   const propShapeRadius = document.getElementById('propShapeRadius');
   const propShapeRadiusVal = document.getElementById('propShapeRadiusVal');
+  const propShapeGradColor1 = document.getElementById('propShapeGradColor1');
+  const propShapeGradColor2 = document.getElementById('propShapeGradColor2');
+  const propShapeGradDir = document.getElementById('propShapeGradDir');
+  const propShapeRadiusGrad = document.getElementById('propShapeRadiusGrad');
+  const propShapeRadiusGradVal = document.getElementById('propShapeRadiusGradVal');
   const propShapeOpacity = document.getElementById('propShapeOpacity');
   const propShapeOpacityVal = document.getElementById('propShapeOpacityVal');
+  const propShapeGradTransparent = document.getElementById('propShapeGradTransparent');
+
+  // Gradient Layer Inspector Fields & Tools
+  const toolAddGradientLayer = document.getElementById('toolAddGradientLayer');
+  const canvasBgGradTransparent = document.getElementById('canvasBgGradTransparent');
+  const gradientInspector = document.getElementById('gradientInspector');
+  const btnGradLayerFitCanvas = document.getElementById('btnGradLayerFitCanvas');
+  const btnGradLayerModeTransparent = document.getElementById('btnGradLayerModeTransparent');
+  const btnGradLayerModeTwoColors = document.getElementById('btnGradLayerModeTwoColors');
+  const gradLayerPresets = document.getElementById('gradLayerPresets');
+  const propGradLayerColor1 = document.getElementById('propGradLayerColor1');
+  const propGradLayerColor1Hex = document.getElementById('propGradLayerColor1Hex');
+  const gradLayerColor2Group = document.getElementById('gradLayerColor2Group');
+  const propGradLayerColor2 = document.getElementById('propGradLayerColor2');
+  const propGradLayerColor2Hex = document.getElementById('propGradLayerColor2Hex');
+  const propGradLayerDir = document.getElementById('propGradLayerDir');
+  const btnGradLayerInvert = document.getElementById('btnGradLayerInvert');
+  const propGradLayerOpacity = document.getElementById('propGradLayerOpacity');
+  const propGradLayerOpacityVal = document.getElementById('propGradLayerOpacityVal');
+  const propGradLayerRadius = document.getElementById('propGradLayerRadius');
+  const propGradLayerRadiusVal = document.getElementById('propGradLayerRadiusVal');
+
   // Layer order actions
   const btnBringForward = document.getElementById('btnBringForward');
   const btnSendBackward = document.getElementById('btnSendBackward');
@@ -1115,6 +1167,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Style Presets buttons
   const stylePresetBtns = document.querySelectorAll('.style-preset-btn');
+
+  // Color to Transparent / Hex to RGBA Helper
+  function hexToRgba(hex, alpha = 1) {
+    if (!hex || hex === 'transparent') return 'rgba(0,0,0,0)';
+    let c = String(hex).replace('#', '');
+    if (c.length === 3) c = c.split('').map(x => x + x).join('');
+    const num = parseInt(c, 16);
+    if (isNaN(num)) return `rgba(0,0,0,${alpha})`;
+    const r = (num >> 16) & 255;
+    const g = (num >> 8) & 255;
+    const b = num & 255;
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
 
   // Canvas State
   class CanvasEngine {
@@ -1136,11 +1201,20 @@ document.addEventListener('DOMContentLoaded', () => {
       this.width = 1280;
       this.height = 720;
       this.bgColor = '#0f172a';
+      this.bgGradient = {
+        enabled: false,
+        color1: '#000000',
+        color2: '#7f1d1d',
+        type: 'linear',
+        direction: 'vertical'
+      };
       this.elements = [];
       this.selectedId = null;
       this.history = [];
       this.historyIndex = -1;
       this.showSafeZone = true;
+      this.snappingEnabled = true;
+      this.activeSmartGuides = [];
 
       // Zoom & Pan state
       this.zoomLevel = 1.0;
@@ -1304,6 +1378,13 @@ document.addEventListener('DOMContentLoaded', () => {
         height: h,
         preset,
         bgColor: '#0f172a',
+        bgGradient: {
+          enabled: false,
+          color1: '#000000',
+          color2: '#7f1d1d',
+          type: 'linear',
+          direction: 'vertical'
+        },
         elements: initialElements || [],
         selectedId: null,
         isLinked: false,
@@ -1407,6 +1488,7 @@ document.addEventListener('DOMContentLoaded', () => {
       this.width = c.width;
       this.height = c.height;
       this.bgColor = c.bgColor;
+      this.bgGradient = c.bgGradient || { enabled: false, color1: '#000000', color2: '#7f1d1d', type: 'linear', direction: 'vertical' };
       this.elements = c.elements;
       this.selectedId = c.selectedId;
       this.history = c.history;
@@ -1426,6 +1508,25 @@ document.addEventListener('DOMContentLoaded', () => {
       const canvasBgColorInput = document.getElementById('canvasBgColorInput');
       if (canvasBgColorInput) {
         canvasBgColorInput.value = this.bgColor;
+      }
+
+      if (btnBgModeSolid && btnBgModeGradient && bgSolidControls && bgGradientControls) {
+        const isGrad = Boolean(this.bgGradient && this.bgGradient.enabled);
+        btnBgModeSolid.classList.toggle('active', !isGrad);
+        btnBgModeGradient.classList.toggle('active', isGrad);
+        bgSolidControls.classList.toggle('hidden', isGrad);
+        bgGradientControls.classList.toggle('hidden', !isGrad);
+
+        if (isGrad) {
+          if (canvasBgGradColor1) canvasBgGradColor1.value = this.bgGradient.color1 || '#000000';
+          if (canvasBgGradColor2) canvasBgGradColor2.value = this.bgGradient.color2 || '#7f1d1d';
+          if (canvasBgGradDir) canvasBgGradDir.value = this.bgGradient.direction || 'vertical';
+          if (canvasBgGradTransparent) {
+            canvasBgGradTransparent.checked = Boolean(this.bgGradient.transparent);
+            const c2Group = canvasBgGradColor2 ? canvasBgGradColor2.closest('.prop-group') : null;
+            if (c2Group) c2Group.style.display = canvasBgGradTransparent.checked ? 'none' : 'flex';
+          }
+        }
       }
 
       this.updateInspector();
@@ -1467,10 +1568,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (newState) {
           if (c.elements.length > 0 && other && other.elements.length === 0) {
             other.bgColor = c.bgColor;
+            if (c.bgGradient) other.bgGradient = JSON.parse(JSON.stringify(c.bgGradient));
             this.mirrorElementsFrom(c, other);
             this.render(other.id);
           } else if (other && other.elements.length > 0 && c.elements.length === 0) {
             c.bgColor = other.bgColor;
+            if (other.bgGradient) c.bgGradient = JSON.parse(JSON.stringify(other.bgGradient));
             this.mirrorElementsFrom(other, c);
             this.render(c.id);
           }
@@ -1493,6 +1596,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const sourceWithElements = this.canvases.find(item => item.id !== c.id && item.isLinked && item.elements.length > 0);
         if (sourceWithElements && c.elements.length === 0) {
           c.bgColor = sourceWithElements.bgColor;
+          if (sourceWithElements.bgGradient) c.bgGradient = JSON.parse(JSON.stringify(sourceWithElements.bgGradient));
           this.mirrorElementsFrom(sourceWithElements, c);
           this.render(c.id);
           this.saveHistory();
@@ -1517,6 +1621,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const scale = Math.min(target.width, target.height) / Math.min(source.width, source.height);
 
         const clone = { ...el };
+        if (el.gradient) {
+          clone.gradient = JSON.parse(JSON.stringify(el.gradient));
+        }
         clone.id = 'el_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
         clone.syncId = el.syncId || el.id;
         el.syncId = clone.syncId;
@@ -1580,7 +1687,7 @@ document.addEventListener('DOMContentLoaded', () => {
           'shadowEnabled', 'shadowColor', 'shadowBlur', 'shadowOffsetX', 'shadowOffsetY',
           'bgEnabled', 'bgColor', 'bgRadius', 'bgPadding',
           'opacity', 'rotation', 'borderRadius', 'borderEnabled', 'borderColor', 'borderWidth',
-          'flipH', 'flipV'
+          'flipH', 'flipV', 'mode', 'transparent', 'color1', 'color2', 'direction'
         ];
 
         props.forEach(p => {
@@ -1589,13 +1696,19 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         });
 
+        if (sourceEl.gradient) {
+          targetEl.gradient = JSON.parse(JSON.stringify(sourceEl.gradient));
+        } else if (targetEl.gradient) {
+          targetEl.gradient.enabled = false;
+        }
+
         targetEl.x = Math.round(normX * target.width);
         targetEl.y = Math.round(normY * target.height);
 
         const scale = Math.min(target.width, target.height) / Math.min(sourceCanvas.width, sourceCanvas.height);
         if (sourceEl.type === 'text') {
           targetEl.fontSize = Math.max(14, Math.round(sourceEl.fontSize * scale));
-        } else if (sourceEl.type === 'shape') {
+        } else if (sourceEl.type === 'shape' || sourceEl.type === 'gradient') {
           targetEl.width = Math.max(20, Math.round(sourceEl.width * scale));
           targetEl.height = Math.max(20, Math.round(sourceEl.height * scale));
         } else if (sourceEl.type === 'image') {
@@ -2005,6 +2118,118 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
+    toggleSnapping() {
+      this.snappingEnabled = !this.snappingEnabled;
+      if (toggleSnappingBtn) {
+        toggleSnappingBtn.classList.toggle('active', this.snappingEnabled);
+      }
+      showToast(this.snappingEnabled ? '🧲 Guias Magnéticas ativadas' : 'Guias Magnéticas desativadas', 'info');
+      this.activeSmartGuides = [];
+      const active = this.getActiveCanvas();
+      if (active) this.updateSelectionOverlay(active);
+    }
+
+    computeSnapping(sel, targetX, targetY) {
+      const active = this.getActiveCanvas();
+      if (!active) return { x: targetX, y: targetY, guides: [] };
+
+      const cW = active.width;
+      const cH = active.height;
+      const dims = this.getElementDimensions(sel);
+      const halfW = dims.w / 2;
+      const halfH = dims.h / 2;
+
+      const SNAP_THRESHOLD = 8;
+
+      // X candidate targets: { pos: number, kind: 'center' | 'canvas' | 'element' }
+      const xTargets = [
+        { pos: cW / 2, kind: 'center' },
+        { pos: 0, kind: 'canvas' },
+        { pos: cW, kind: 'canvas' }
+      ];
+
+      // Y candidate targets
+      const yTargets = [
+        { pos: cH / 2, kind: 'center' },
+        { pos: 0, kind: 'canvas' },
+        { pos: cH, kind: 'canvas' }
+      ];
+
+      // Targets from other visible elements on this canvas
+      const otherElements = (active.elements || []).filter(el => el.id !== sel.id);
+      otherElements.forEach(other => {
+        const oDims = this.getElementDimensions(other);
+        const oHalfW = oDims.w / 2;
+        const oHalfH = oDims.h / 2;
+
+        xTargets.push(
+          { pos: other.x, kind: 'element' },
+          { pos: other.x - oHalfW, kind: 'element' },
+          { pos: other.x + oHalfW, kind: 'element' }
+        );
+
+        yTargets.push(
+          { pos: other.y, kind: 'element' },
+          { pos: other.y - oHalfH, kind: 'element' },
+          { pos: other.y + oHalfH, kind: 'element' }
+        );
+      });
+
+      let snappedX = targetX;
+      let minDiffX = SNAP_THRESHOLD + 1;
+      let bestXGuide = null;
+
+      const xPoints = [
+        { val: targetX, offset: 0 },
+        { val: targetX - halfW, offset: -halfW },
+        { val: targetX + halfW, offset: halfW }
+      ];
+
+      xTargets.forEach(t => {
+        xPoints.forEach(pt => {
+          const rawDiff = Math.abs(pt.val - t.pos);
+          const effectiveDiff = (t.kind === 'center') ? rawDiff * 0.85 : rawDiff;
+          if (rawDiff <= SNAP_THRESHOLD && effectiveDiff < minDiffX) {
+            minDiffX = effectiveDiff;
+            snappedX = t.pos - pt.offset;
+            bestXGuide = { type: 'v', pos: t.pos, kind: t.kind };
+          }
+        });
+      });
+
+      let snappedY = targetY;
+      let minDiffY = SNAP_THRESHOLD + 1;
+      let bestYGuide = null;
+
+      const yPoints = [
+        { val: targetY, offset: 0 },
+        { val: targetY - halfH, offset: -halfH },
+        { val: targetY + halfH, offset: halfH }
+      ];
+
+      yTargets.forEach(t => {
+        yPoints.forEach(pt => {
+          const rawDiff = Math.abs(pt.val - t.pos);
+          const effectiveDiff = (t.kind === 'center') ? rawDiff * 0.85 : rawDiff;
+          if (rawDiff <= SNAP_THRESHOLD && effectiveDiff < minDiffY) {
+            minDiffY = effectiveDiff;
+            snappedY = t.pos - pt.offset;
+            bestYGuide = { type: 'h', pos: t.pos, kind: t.kind };
+          }
+        });
+      });
+
+      const guides = [];
+      if (bestXGuide) guides.push(bestXGuide);
+      if (bestYGuide) guides.push(bestYGuide);
+
+      return {
+        x: Math.round(snappedX),
+        y: Math.round(snappedY),
+        guides
+      };
+    }
+
     setupInitialPreset() {
       // Create welcoming sample elements
       this.addElement({
@@ -2131,6 +2356,17 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (el.type === 'shape') {
               el.width = Math.max(20, Math.round(sourceEl.width * scale));
               el.height = Math.max(20, Math.round(sourceEl.height * scale));
+            } else if (el.type === 'gradient') {
+              const wasCovering = (sourceEl.width >= linkedSource.width * 0.9) && (sourceEl.height >= linkedSource.height * 0.9);
+              if (wasCovering) {
+                el.width = w;
+                el.height = newH;
+                el.x = Math.round(w / 2);
+                el.y = Math.round(newH / 2);
+              } else {
+                el.width = Math.max(20, Math.round(sourceEl.width * scale));
+                el.height = Math.max(20, Math.round(sourceEl.height * scale));
+              }
             } else if (el.type === 'image') {
               const origRatio = (sourceEl.origWidth && sourceEl.origHeight)
                 ? (sourceEl.origWidth / sourceEl.origHeight)
@@ -2158,7 +2394,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (el.type === 'text') {
               el.fontSize = Math.max(14, Math.round(el.fontSize * uniformScale));
-            } else if (el.type === 'shape') {
+            } else if (el.type === 'shape' || el.type === 'gradient') {
               el.width = Math.max(20, Math.round(el.width * uniformScale));
               el.height = Math.max(20, Math.round(el.height * uniformScale));
             } else if (el.type === 'image') {
@@ -2267,8 +2503,13 @@ document.addEventListener('DOMContentLoaded', () => {
         width: active.width,
         height: active.height,
         bgColor: active.bgColor,
+        bgGradient: active.bgGradient ? { ...active.bgGradient } : null,
         preset: active.preset,
-        elements: active.elements.map(el => ({ ...el }))
+        elements: active.elements.map(el => {
+          const clone = { ...el };
+          if (el.gradient) clone.gradient = { ...el.gradient };
+          return clone;
+        })
       };
 
       active.history.push(JSON.stringify(snapshot));
@@ -2308,6 +2549,10 @@ document.addEventListener('DOMContentLoaded', () => {
       active.width = data.width;
       active.height = data.height;
       active.bgColor = data.bgColor;
+      active.bgGradient = data.bgGradient
+        ? { ...data.bgGradient }
+        : { enabled: false, color1: '#000000', color2: '#7f1d1d', type: 'linear', direction: 'vertical' };
+      this.bgGradient = active.bgGradient;
       active.preset = data.preset || '1280x720';
       active.canvasEl.width = data.width;
       active.canvasEl.height = data.height;
@@ -2349,6 +2594,25 @@ document.addEventListener('DOMContentLoaded', () => {
       const canvasBgColorInput = document.getElementById('canvasBgColorInput');
       if (canvasBgColorInput) canvasBgColorInput.value = data.bgColor;
 
+      if (btnBgModeSolid && btnBgModeGradient && bgSolidControls && bgGradientControls) {
+        const isGrad = Boolean(active.bgGradient && active.bgGradient.enabled);
+        btnBgModeSolid.classList.toggle('active', !isGrad);
+        btnBgModeGradient.classList.toggle('active', isGrad);
+        bgSolidControls.classList.toggle('hidden', isGrad);
+        bgGradientControls.classList.toggle('hidden', !isGrad);
+
+        if (isGrad) {
+          if (canvasBgGradColor1) canvasBgGradColor1.value = active.bgGradient.color1 || '#000000';
+          if (canvasBgGradColor2) canvasBgGradColor2.value = active.bgGradient.color2 || '#7f1d1d';
+          if (canvasBgGradDir) canvasBgGradDir.value = active.bgGradient.direction || 'vertical';
+          if (canvasBgGradTransparent) {
+            canvasBgGradTransparent.checked = Boolean(active.bgGradient.transparent);
+            const c2Group = canvasBgGradColor2 ? canvasBgGradColor2.closest('.prop-group') : null;
+            if (c2Group) c2Group.style.display = canvasBgGradTransparent.checked ? 'none' : 'flex';
+          }
+        }
+      }
+
       this.render();
       this.updateInspector();
       this.renderLayers();
@@ -2389,7 +2653,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
           if (syncedEl.type === 'text') {
             syncedEl.fontSize = Math.max(14, Math.round(el.fontSize * scale));
-          } else if (syncedEl.type === 'shape') {
+          } else if (syncedEl.type === 'shape' || syncedEl.type === 'gradient') {
             syncedEl.width = Math.max(20, Math.round(el.width * scale));
             syncedEl.height = Math.max(20, Math.round(el.height * scale));
           } else if (syncedEl.type === 'image') {
@@ -2583,7 +2847,30 @@ document.addEventListener('DOMContentLoaded', () => {
       targetCtx.clearRect(0, 0, c.width, c.height);
 
       // 1. Draw Canvas Background
-      targetCtx.fillStyle = c.bgColor;
+      if (c.bgGradient && c.bgGradient.enabled) {
+        let grad;
+        const dir = c.bgGradient.direction || 'vertical';
+        const c1 = c.bgGradient.color1 || '#000000';
+        const isTrans = Boolean(c.bgGradient.transparent);
+        const c2 = isTrans ? hexToRgba(c1, 0) : (c.bgGradient.color2 || '#7f1d1d');
+        if (dir === 'radial') {
+          const cx = c.width / 2;
+          const cy = c.height / 2;
+          const r = Math.max(c.width, c.height) / 2;
+          grad = targetCtx.createRadialGradient(cx, cy, 0, cx, cy, r);
+        } else if (dir === 'horizontal') {
+          grad = targetCtx.createLinearGradient(0, 0, c.width, 0);
+        } else if (dir === 'diagonal') {
+          grad = targetCtx.createLinearGradient(0, 0, c.width, c.height);
+        } else { // vertical
+          grad = targetCtx.createLinearGradient(0, 0, 0, c.height);
+        }
+        grad.addColorStop(0, c1);
+        grad.addColorStop(1, c2);
+        targetCtx.fillStyle = grad;
+      } else {
+        targetCtx.fillStyle = c.bgColor || '#0f172a';
+      }
       targetCtx.fillRect(0, 0, c.width, c.height);
 
       const prevCtx = ctx;
@@ -2605,6 +2892,8 @@ document.addEventListener('DOMContentLoaded', () => {
           this.renderImageElement(el);
         } else if (el.type === 'shape') {
           this.renderShapeElement(el);
+        } else if (el.type === 'gradient') {
+          this.renderGradientElement(el);
         }
 
         targetCtx.restore();
@@ -2685,7 +2974,26 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Fill Text
-        ctx.fillStyle = el.color || '#ffffff';
+        if (el.gradient && el.gradient.enabled) {
+          let grad;
+          const dir = el.gradient.direction || 'vertical';
+          const c1 = el.gradient.color1 || '#ffe600';
+          const c2 = el.gradient.color2 || '#ff3b00';
+          const halfH = lineHeight / 2;
+          const halfW = (el.computedWidth || el.fontSize * 4) / 2;
+          if (dir === 'horizontal') {
+            grad = ctx.createLinearGradient(-halfW, 0, halfW, 0);
+          } else if (dir === 'diagonal') {
+            grad = ctx.createLinearGradient(-halfW, currY - halfH, halfW, currY + halfH);
+          } else { // vertical
+            grad = ctx.createLinearGradient(0, currY - halfH, 0, currY + halfH);
+          }
+          grad.addColorStop(0, c1);
+          grad.addColorStop(1, c2);
+          ctx.fillStyle = grad;
+        } else {
+          ctx.fillStyle = el.color || '#ffffff';
+        }
         ctx.fillText(line, 0, currY);
       });
     }
@@ -2736,9 +3044,68 @@ document.addEventListener('DOMContentLoaded', () => {
       const rad = el.borderRadius || 10;
 
       ctx.save();
-      ctx.fillStyle = el.color || '#ff5722';
+      if (el.gradient && el.gradient.enabled) {
+        let grad;
+        const dir = el.gradient.direction || 'horizontal';
+        const c1 = el.gradient.color1 || '#ff5722';
+        const isTrans = Boolean(el.gradient.transparent);
+        const c2 = isTrans ? hexToRgba(c1, 0) : (el.gradient.color2 || '#b91c1c');
+        if (dir === 'vertical') {
+          grad = ctx.createLinearGradient(0, -h / 2, 0, h / 2);
+        } else if (dir === 'diagonal') {
+          grad = ctx.createLinearGradient(-w / 2, -h / 2, w / 2, h / 2);
+        } else { // horizontal
+          grad = ctx.createLinearGradient(-w / 2, 0, w / 2, 0);
+        }
+        grad.addColorStop(0, c1);
+        grad.addColorStop(1, c2);
+        ctx.fillStyle = grad;
+      } else {
+        ctx.fillStyle = el.color || '#ff5722';
+      }
       this.roundRect(ctx, -w / 2, -h / 2, w, h, rad);
       ctx.fill();
+      ctx.restore();
+    }
+
+    renderGradientElement(el) {
+      const w = el.width || 1280;
+      const h = el.height || 720;
+      const rad = el.borderRadius || 0;
+      const dir = el.direction || 'bottom-up';
+      const c1 = el.color1 || '#000000';
+      const isTrans = el.mode === 'transparent' || el.transparent === true;
+      const c2 = isTrans ? hexToRgba(c1, 0) : (el.color2 || '#000000');
+
+      ctx.save();
+      let grad;
+      if (dir === 'radial') {
+        const r = Math.max(w, h) / 2;
+        grad = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+      } else if (dir === 'bottom-up') {
+        grad = ctx.createLinearGradient(0, h / 2, 0, -h / 2);
+      } else if (dir === 'top-down') {
+        grad = ctx.createLinearGradient(0, -h / 2, 0, h / 2);
+      } else if (dir === 'left-right') {
+        grad = ctx.createLinearGradient(-w / 2, 0, w / 2, 0);
+      } else if (dir === 'right-left') {
+        grad = ctx.createLinearGradient(w / 2, 0, -w / 2, 0);
+      } else if (dir === 'diagonal') {
+        grad = ctx.createLinearGradient(-w / 2, -h / 2, w / 2, h / 2);
+      } else {
+        grad = ctx.createLinearGradient(0, h / 2, 0, -h / 2);
+      }
+
+      grad.addColorStop(0, c1);
+      grad.addColorStop(1, c2);
+      ctx.fillStyle = grad;
+
+      if (rad > 0) {
+        this.roundRect(ctx, -w / 2, -h / 2, w, h, rad);
+        ctx.fill();
+      } else {
+        ctx.fillRect(-w / 2, -h / 2, w, h);
+      }
       ctx.restore();
     }
 
@@ -2783,7 +3150,23 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
       });
 
+      let guidesHtml = '';
+      if (this.snappingEnabled && this.activeSmartGuides && this.activeSmartGuides.length > 0) {
+        this.activeSmartGuides.forEach(g => {
+          const isCenter = g.kind === 'center';
+          const strokeColor = isCenter ? '#ff007a' : (g.kind === 'canvas' ? '#94a3b8' : '#00e5ff');
+          const strokeDash = isCenter ? 'none' : '5,4';
+          const strokeW = isCenter ? '1.5' : '1.2';
+          if (g.type === 'v') {
+            guidesHtml += `<line class="smart-guide-line ${isCenter ? 'smart-guide-center' : 'smart-guide-element'}" x1="${g.pos}" y1="0" x2="${g.pos}" y2="${c.height}" stroke="${strokeColor}" stroke-width="${strokeW}" stroke-dasharray="${strokeDash}" vector-effect="non-scaling-stroke" pointer-events="none" />`;
+          } else if (g.type === 'h') {
+            guidesHtml += `<line class="smart-guide-line ${isCenter ? 'smart-guide-center' : 'smart-guide-element'}" x1="0" y1="${g.pos}" x2="${c.width}" y2="${g.pos}" stroke="${strokeColor}" stroke-width="${strokeW}" stroke-dasharray="${strokeDash}" vector-effect="non-scaling-stroke" pointer-events="none" />`;
+          }
+        });
+      }
+
       const svgContent = `
+        <g class="smart-guides-layer">${guidesHtml}</g>
         <g transform="translate(${sel.x}, ${sel.y}) rotate(${sel.rotation || 0})">
           <!-- Dashed bounding box -->
           <rect class="transform-bounding-box" x="${-halfW}" y="${-halfH}" width="${halfW * 2}" height="${halfH * 2}" fill="none" stroke="#ff5722" stroke-width="2" stroke-dasharray="6,4" vector-effect="non-scaling-stroke" pointer-events="none" />
@@ -3302,8 +3685,20 @@ document.addEventListener('DOMContentLoaded', () => {
       if (this.isDragging && sel) {
         const dx = coords.x - this.dragStartX;
         const dy = coords.y - this.dragStartY;
-        sel.x = this.initialElementState.x + dx;
-        sel.y = this.initialElementState.y + dy;
+        let targetX = this.initialElementState.x + dx;
+        let targetY = this.initialElementState.y + dy;
+
+        if (this.snappingEnabled && !e.altKey) {
+          const snap = this.computeSnapping(sel, targetX, targetY);
+          targetX = snap.x;
+          targetY = snap.y;
+          this.activeSmartGuides = snap.guides;
+        } else {
+          this.activeSmartGuides = [];
+        }
+
+        sel.x = targetX;
+        sel.y = targetY;
         this.render();
       } else if (this.isRotating && sel) {
         const angleRad = Math.atan2(coords.y - sel.y, coords.x - sel.x);
@@ -3353,6 +3748,9 @@ document.addEventListener('DOMContentLoaded', () => {
         this.isResizing = false;
         this.isRotating = false;
         this.activeHandle = null;
+        this.activeSmartGuides = [];
+        const active = this.getActiveCanvas();
+        if (active) this.updateSelectionOverlay(active);
         this.saveHistory();
       }
     }
@@ -3451,6 +3849,7 @@ document.addEventListener('DOMContentLoaded', () => {
         textInspector.classList.add('hidden');
         imageInspector.classList.add('hidden');
         shapeInspector.classList.add('hidden');
+        if (gradientInspector) gradientInspector.classList.add('hidden');
         elementActionsSection.classList.add('hidden');
         return;
       }
@@ -3462,6 +3861,7 @@ document.addEventListener('DOMContentLoaded', () => {
         textInspector.classList.remove('hidden');
         imageInspector.classList.add('hidden');
         shapeInspector.classList.add('hidden');
+        if (gradientInspector) gradientInspector.classList.add('hidden');
 
         propTextContent.value = sel.text || '';
         propFontFamily.value = sel.fontFamily || "'Bebas Neue', cursive";
@@ -3469,6 +3869,22 @@ document.addEventListener('DOMContentLoaded', () => {
         propTextColor.value = sel.color || '#ffffff';
         propTextColorHex.textContent = sel.color || '#ffffff';
         propFontWeight.value = sel.fontWeight || '900';
+
+        // Text Gradient vs Solid Fill Sync
+        const isTextGrad = Boolean(sel.gradient && sel.gradient.enabled);
+        if (btnTextFillSolid && btnTextFillGradient && textSolidColorGroup && textGradientGroup) {
+          btnTextFillSolid.classList.toggle('active', !isTextGrad);
+          btnTextFillGradient.classList.toggle('active', isTextGrad);
+          textSolidColorGroup.classList.toggle('hidden', isTextGrad);
+          textGradientGroup.classList.toggle('hidden', !isTextGrad);
+
+          if (isTextGrad) {
+            if (propTextGradColor1) propTextGradColor1.value = sel.gradient.color1 || '#ffe600';
+            if (propTextGradColor2) propTextGradColor2.value = sel.gradient.color2 || '#ff3b00';
+            if (propTextGradDir) propTextGradDir.value = sel.gradient.direction || 'vertical';
+            if (propFontWeightGrad) propFontWeightGrad.value = sel.fontWeight || '900';
+          }
+        }
 
         // Stroke
         propStrokeEnabled.checked = Boolean(sel.strokeEnabled);
@@ -3499,6 +3915,7 @@ document.addEventListener('DOMContentLoaded', () => {
         textInspector.classList.add('hidden');
         imageInspector.classList.remove('hidden');
         shapeInspector.classList.add('hidden');
+        if (gradientInspector) gradientInspector.classList.add('hidden');
 
         propImageOpacity.value = Math.round((sel.opacity !== undefined ? sel.opacity : 1) * 100);
         propImageOpacityVal.textContent = propImageOpacity.value;
@@ -3521,12 +3938,62 @@ document.addEventListener('DOMContentLoaded', () => {
         textInspector.classList.add('hidden');
         imageInspector.classList.add('hidden');
         shapeInspector.classList.remove('hidden');
+        if (gradientInspector) gradientInspector.classList.add('hidden');
 
         propShapeColor.value = sel.color || '#ff5722';
-        propShapeRadius.value = sel.borderRadius || 12;
-        propShapeRadiusVal.textContent = sel.borderRadius || 12;
+        if (propShapeColorHex) propShapeColorHex.textContent = sel.color || '#ff5722';
+        propShapeRadius.value = sel.borderRadius !== undefined ? sel.borderRadius : 12;
+        propShapeRadiusVal.textContent = propShapeRadius.value;
         propShapeOpacity.value = Math.round((sel.opacity !== undefined ? sel.opacity : 1) * 100);
         propShapeOpacityVal.textContent = propShapeOpacity.value;
+
+        // Shape Gradient vs Solid Fill Sync
+        const isShapeGrad = Boolean(sel.gradient && sel.gradient.enabled);
+        if (btnShapeFillSolid && btnShapeFillGradient && shapeSolidColorGroup && shapeGradientGroup) {
+          btnShapeFillSolid.classList.toggle('active', !isShapeGrad);
+          btnShapeFillGradient.classList.toggle('active', isShapeGrad);
+          shapeSolidColorGroup.classList.toggle('hidden', isShapeGrad);
+          shapeGradientGroup.classList.toggle('hidden', !isShapeGrad);
+
+          if (isShapeGrad) {
+            if (propShapeGradColor1) propShapeGradColor1.value = sel.gradient.color1 || '#ff5722';
+            if (propShapeGradColor2) propShapeGradColor2.value = sel.gradient.color2 || '#b91c1c';
+            if (propShapeGradDir) propShapeGradDir.value = sel.gradient.direction || 'horizontal';
+            if (propShapeRadiusGrad) {
+              propShapeRadiusGrad.value = sel.borderRadius !== undefined ? sel.borderRadius : 12;
+              if (propShapeRadiusGradVal) propShapeRadiusGradVal.textContent = propShapeRadiusGrad.value;
+            }
+            if (propShapeGradTransparent) {
+              propShapeGradTransparent.checked = Boolean(sel.gradient.transparent);
+              const c2Group = propShapeGradColor2 ? propShapeGradColor2.closest('.prop-group') : null;
+              if (c2Group) c2Group.style.display = propShapeGradTransparent.checked ? 'none' : 'flex';
+            }
+          }
+        }
+      } else if (sel.type === 'gradient') {
+        textInspector.classList.add('hidden');
+        imageInspector.classList.add('hidden');
+        shapeInspector.classList.add('hidden');
+        if (gradientInspector) gradientInspector.classList.remove('hidden');
+
+        const isTrans = sel.mode === 'transparent' || sel.transparent === true;
+        if (btnGradLayerModeTransparent) btnGradLayerModeTransparent.classList.toggle('active', isTrans);
+        if (btnGradLayerModeTwoColors) btnGradLayerModeTwoColors.classList.toggle('active', !isTrans);
+        if (gradLayerColor2Group) gradLayerColor2Group.style.display = isTrans ? 'none' : 'flex';
+
+        if (propGradLayerColor1) propGradLayerColor1.value = sel.color1 || '#000000';
+        if (propGradLayerColor1Hex) propGradLayerColor1Hex.textContent = sel.color1 || '#000000';
+        if (propGradLayerColor2) propGradLayerColor2.value = sel.color2 || '#000000';
+        if (propGradLayerColor2Hex) propGradLayerColor2Hex.textContent = sel.color2 || '#000000';
+        if (propGradLayerDir) propGradLayerDir.value = sel.direction || 'bottom-up';
+
+        const opacityPct = Math.round((sel.opacity !== undefined ? sel.opacity : 1) * 100);
+        if (propGradLayerOpacity) propGradLayerOpacity.value = opacityPct;
+        if (propGradLayerOpacityVal) propGradLayerOpacityVal.textContent = opacityPct;
+
+        const rad = sel.borderRadius !== undefined ? sel.borderRadius : 0;
+        if (propGradLayerRadius) propGradLayerRadius.value = rad;
+        if (propGradLayerRadiusVal) propGradLayerRadiusVal.textContent = rad;
       }
     }
 
@@ -3602,6 +4069,9 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (el.type === 'shape') {
           icon = '⬛';
           label = 'Tarja / Forma';
+        } else if (el.type === 'gradient') {
+          icon = '🌈';
+          label = el.name || 'Camada Gradiente';
         }
 
         item.innerHTML = `
@@ -3681,9 +4151,18 @@ document.addEventListener('DOMContentLoaded', () => {
   window.canvasEngine = canvasEngine;
 
   // Safe zone guide toggle
-  toggleSafeZoneBtn.addEventListener('click', () => {
-    canvasEngine.toggleSafeZone();
-  });
+  if (toggleSafeZoneBtn) {
+    toggleSafeZoneBtn.addEventListener('click', () => {
+      canvasEngine.toggleSafeZone();
+    });
+  }
+
+  // Magnetic snapping guide toggle
+  if (toggleSnappingBtn) {
+    toggleSnappingBtn.addEventListener('click', () => {
+      canvasEngine.toggleSnapping();
+    });
+  }
 
   // Undo / Redo buttons
   undoBtn.addEventListener('click', () => canvasEngine.undo());
@@ -3784,6 +4263,32 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // Left Tool: Add Gradient Layer
+  if (toolAddGradientLayer) {
+    toolAddGradientLayer.addEventListener('click', () => {
+      canvasEngine.setPanMode(false);
+      const active = canvasEngine.getActiveCanvas();
+      const w = active ? active.width : canvasEngine.width;
+      const h = active ? active.height : canvasEngine.height;
+      canvasEngine.addElement({
+        type: 'gradient',
+        name: 'Camada Gradiente',
+        mode: 'transparent',
+        transparent: true,
+        color1: '#000000',
+        color2: '#000000',
+        direction: 'bottom-up',
+        width: w,
+        height: Math.round(h * 0.65),
+        borderRadius: 0,
+        opacity: 0.9,
+        x: Math.round(w / 2),
+        y: Math.round(h - (h * 0.65) / 2),
+        rotation: 0
+      });
+    });
+  }
+
   // Background Color Swatches
   swatchBtns.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -3791,15 +4296,28 @@ document.addEventListener('DOMContentLoaded', () => {
       const active = canvasEngine.getActiveCanvas();
       if (active) {
         active.bgColor = color;
+        if (!active.bgGradient) active.bgGradient = {};
+        active.bgGradient.enabled = false;
         if (active.isLinked) {
           canvasEngine.getLinkedCanvases(active.id).forEach(target => {
             target.bgColor = color;
+            if (!target.bgGradient) target.bgGradient = {};
+            target.bgGradient.enabled = false;
             canvasEngine.render(target.id);
           });
         }
       }
       canvasEngine.bgColor = color;
+      if (canvasEngine.bgGradient) canvasEngine.bgGradient.enabled = false;
       canvasBgColorInput.value = color;
+
+      if (btnBgModeSolid && btnBgModeGradient && bgSolidControls && bgGradientControls) {
+        btnBgModeSolid.classList.add('active');
+        btnBgModeGradient.classList.remove('active');
+        bgSolidControls.classList.remove('hidden');
+        bgGradientControls.classList.add('hidden');
+      }
+
       canvasEngine.saveHistory();
       canvasEngine.render();
     });
@@ -3809,17 +4327,185 @@ document.addEventListener('DOMContentLoaded', () => {
     const active = canvasEngine.getActiveCanvas();
     if (active) {
       active.bgColor = e.target.value;
+      if (!active.bgGradient) active.bgGradient = {};
+      active.bgGradient.enabled = false;
       if (active.isLinked) {
         canvasEngine.getLinkedCanvases(active.id).forEach(target => {
           target.bgColor = e.target.value;
+          if (!target.bgGradient) target.bgGradient = {};
+          target.bgGradient.enabled = false;
           canvasEngine.render(target.id);
         });
       }
     }
     canvasEngine.bgColor = e.target.value;
+    if (canvasEngine.bgGradient) canvasEngine.bgGradient.enabled = false;
     canvasEngine.render();
   });
   canvasBgColorInput.addEventListener('change', () => canvasEngine.saveHistory());
+
+  // Background Gradient Mode & Presets
+  if (btnBgModeSolid && btnBgModeGradient) {
+    btnBgModeSolid.addEventListener('click', () => {
+      btnBgModeSolid.classList.add('active');
+      btnBgModeGradient.classList.remove('active');
+      if (bgSolidControls) bgSolidControls.classList.remove('hidden');
+      if (bgGradientControls) bgGradientControls.classList.add('hidden');
+
+      const active = canvasEngine.getActiveCanvas();
+      if (active) {
+        if (!active.bgGradient) active.bgGradient = {};
+        active.bgGradient.enabled = false;
+        if (active.isLinked) {
+          canvasEngine.getLinkedCanvases(active.id).forEach(target => {
+            if (!target.bgGradient) target.bgGradient = {};
+            target.bgGradient.enabled = false;
+            canvasEngine.render(target.id);
+          });
+        }
+      }
+      if (canvasEngine.bgGradient) canvasEngine.bgGradient.enabled = false;
+      canvasEngine.saveHistory();
+      canvasEngine.render();
+    });
+
+    btnBgModeGradient.addEventListener('click', () => {
+      btnBgModeGradient.classList.add('active');
+      btnBgModeSolid.classList.remove('active');
+      if (bgSolidControls) bgSolidControls.classList.add('hidden');
+      if (bgGradientControls) bgGradientControls.classList.remove('hidden');
+
+      const active = canvasEngine.getActiveCanvas();
+      const c1 = canvasBgGradColor1 ? canvasBgGradColor1.value : '#000000';
+      const c2 = canvasBgGradColor2 ? canvasBgGradColor2.value : '#7f1d1d';
+      const dir = canvasBgGradDir ? canvasBgGradDir.value : 'vertical';
+
+      if (active) {
+        active.bgGradient = {
+          enabled: true,
+          color1: c1,
+          color2: c2,
+          type: dir === 'radial' ? 'radial' : 'linear',
+          direction: dir
+        };
+        if (active.isLinked) {
+          canvasEngine.getLinkedCanvases(active.id).forEach(target => {
+            target.bgGradient = JSON.parse(JSON.stringify(active.bgGradient));
+            canvasEngine.render(target.id);
+          });
+        }
+      }
+      canvasEngine.bgGradient = {
+        enabled: true,
+        color1: c1,
+        color2: c2,
+        type: dir === 'radial' ? 'radial' : 'linear',
+        direction: dir
+      };
+      canvasEngine.saveHistory();
+      canvasEngine.render();
+    });
+  }
+
+  if (bgGradientPresets) {
+    bgGradientPresets.querySelectorAll('.gradient-swatch-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const c1 = btn.getAttribute('data-color1') || '#000000';
+        const c2 = btn.getAttribute('data-color2') || '#7f1d1d';
+        const dir = btn.getAttribute('data-dir') || 'vertical';
+
+        if (canvasBgGradColor1) canvasBgGradColor1.value = c1;
+        if (canvasBgGradColor2) canvasBgGradColor2.value = c2;
+        if (canvasBgGradDir) canvasBgGradDir.value = dir;
+
+        if (btnBgModeGradient) btnBgModeGradient.classList.add('active');
+        if (btnBgModeSolid) btnBgModeSolid.classList.remove('active');
+        if (bgSolidControls) bgSolidControls.classList.add('hidden');
+        if (bgGradientControls) bgGradientControls.classList.remove('hidden');
+
+        const active = canvasEngine.getActiveCanvas();
+        if (active) {
+          active.bgGradient = {
+            enabled: true,
+            color1: c1,
+            color2: c2,
+            type: dir === 'radial' ? 'radial' : 'linear',
+            direction: dir
+          };
+          if (active.isLinked) {
+            canvasEngine.getLinkedCanvases(active.id).forEach(target => {
+              target.bgGradient = JSON.parse(JSON.stringify(active.bgGradient));
+              canvasEngine.render(target.id);
+            });
+          }
+        }
+        canvasEngine.bgGradient = {
+          enabled: true,
+          color1: c1,
+          color2: c2,
+          type: dir === 'radial' ? 'radial' : 'linear',
+          direction: dir
+        };
+        canvasEngine.saveHistory();
+        canvasEngine.render();
+      });
+    });
+  }
+
+  const updateBgGradientValues = () => {
+    const active = canvasEngine.getActiveCanvas();
+    const c1 = canvasBgGradColor1 ? canvasBgGradColor1.value : '#000000';
+    const isTrans = canvasBgGradTransparent ? canvasBgGradTransparent.checked : false;
+    const c2 = canvasBgGradColor2 ? canvasBgGradColor2.value : '#7f1d1d';
+    const dir = canvasBgGradDir ? canvasBgGradDir.value : 'vertical';
+
+    if (canvasBgGradColor2) {
+      const c2Group = canvasBgGradColor2.closest('.prop-group');
+      if (c2Group) c2Group.style.display = isTrans ? 'none' : 'flex';
+    }
+
+    const gradObj = {
+      enabled: true,
+      color1: c1,
+      color2: c2,
+      transparent: isTrans,
+      type: dir === 'radial' ? 'radial' : 'linear',
+      direction: dir
+    };
+
+    if (active) {
+      active.bgGradient = { ...gradObj };
+      if (active.isLinked) {
+        canvasEngine.getLinkedCanvases(active.id).forEach(target => {
+          target.bgGradient = JSON.parse(JSON.stringify(active.bgGradient));
+          canvasEngine.render(target.id);
+        });
+      }
+    }
+    canvasEngine.bgGradient = { ...gradObj };
+    canvasEngine.render();
+  };
+
+  if (canvasBgGradColor1) {
+    canvasBgGradColor1.addEventListener('input', updateBgGradientValues);
+    canvasBgGradColor1.addEventListener('change', () => canvasEngine.saveHistory());
+  }
+  if (canvasBgGradColor2) {
+    canvasBgGradColor2.addEventListener('input', updateBgGradientValues);
+    canvasBgGradColor2.addEventListener('change', () => canvasEngine.saveHistory());
+  }
+  if (canvasBgGradTransparent) {
+    canvasBgGradTransparent.addEventListener('change', () => {
+      updateBgGradientValues();
+      canvasEngine.saveHistory();
+    });
+  }
+  if (canvasBgGradDir) {
+    canvasBgGradDir.addEventListener('change', () => {
+      updateBgGradientValues();
+      canvasEngine.saveHistory();
+    });
+  }
 
   // Text Property Listeners
   propTextContent.addEventListener('input', (e) => {
@@ -3853,16 +4539,115 @@ document.addEventListener('DOMContentLoaded', () => {
     const sel = canvasEngine.getSelected();
     if (sel && sel.type === 'text') {
       sel.color = e.target.value;
+      if (sel.gradient) sel.gradient.enabled = false;
       propTextColorHex.textContent = e.target.value;
+      canvasEngine.updateInspector();
       canvasEngine.render();
     }
   });
   propTextColor.addEventListener('change', () => canvasEngine.saveHistory());
 
+  // Text Fill Mode Segmented Buttons
+  if (btnTextFillSolid && btnTextFillGradient) {
+    btnTextFillSolid.addEventListener('click', () => {
+      const sel = canvasEngine.getSelected();
+      if (sel && sel.type === 'text') {
+        if (sel.gradient) sel.gradient.enabled = false;
+        canvasEngine.updateInspector();
+        canvasEngine.saveHistory();
+        canvasEngine.render();
+      }
+    });
+
+    btnTextFillGradient.addEventListener('click', () => {
+      const sel = canvasEngine.getSelected();
+      if (sel && sel.type === 'text') {
+        sel.gradient = {
+          enabled: true,
+          color1: propTextGradColor1 ? propTextGradColor1.value : '#ffe600',
+          color2: propTextGradColor2 ? propTextGradColor2.value : '#ff3b00',
+          direction: propTextGradDir ? propTextGradDir.value : 'vertical'
+        };
+        canvasEngine.updateInspector();
+        canvasEngine.saveHistory();
+        canvasEngine.render();
+      }
+    });
+  }
+
+  // Text Gradient Presets
+  if (textGradientPresets) {
+    textGradientPresets.querySelectorAll('.style-preset-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const sel = canvasEngine.getSelected();
+        if (sel && sel.type === 'text') {
+          const c1 = btn.getAttribute('data-tcolor1') || '#ffe600';
+          const c2 = btn.getAttribute('data-tcolor2') || '#ff3b00';
+          const dir = btn.getAttribute('data-tdir') || 'vertical';
+
+          sel.gradient = {
+            enabled: true,
+            color1: c1,
+            color2: c2,
+            direction: dir
+          };
+          if (propTextGradColor1) propTextGradColor1.value = c1;
+          if (propTextGradColor2) propTextGradColor2.value = c2;
+          if (propTextGradDir) propTextGradDir.value = dir;
+
+          canvasEngine.updateInspector();
+          canvasEngine.saveHistory();
+          canvasEngine.render();
+        }
+      });
+    });
+  }
+
+  const updateTextGradientValues = () => {
+    const sel = canvasEngine.getSelected();
+    if (sel && sel.type === 'text') {
+      sel.gradient = {
+        enabled: true,
+        color1: propTextGradColor1 ? propTextGradColor1.value : '#ffe600',
+        color2: propTextGradColor2 ? propTextGradColor2.value : '#ff3b00',
+        direction: propTextGradDir ? propTextGradDir.value : 'vertical'
+      };
+      canvasEngine.render();
+    }
+  };
+
+  if (propTextGradColor1) {
+    propTextGradColor1.addEventListener('input', updateTextGradientValues);
+    propTextGradColor1.addEventListener('change', () => canvasEngine.saveHistory());
+  }
+  if (propTextGradColor2) {
+    propTextGradColor2.addEventListener('input', updateTextGradientValues);
+    propTextGradColor2.addEventListener('change', () => canvasEngine.saveHistory());
+  }
+  if (propTextGradDir) {
+    propTextGradDir.addEventListener('change', () => {
+      updateTextGradientValues();
+      canvasEngine.saveHistory();
+    });
+  }
+  if (propFontWeightGrad) {
+    propFontWeightGrad.addEventListener('change', (e) => {
+      const sel = canvasEngine.getSelected();
+      if (sel && sel.type === 'text') {
+        sel.fontWeight = e.target.value;
+        if (propFontWeight) propFontWeight.value = e.target.value;
+        canvasEngine.saveHistory();
+        canvasEngine.render();
+      }
+    });
+  }
+
   propFontWeight.addEventListener('change', (e) => {
     const sel = canvasEngine.getSelected();
     if (sel && sel.type === 'text') {
       sel.fontWeight = e.target.value;
+      if (propFontWeightGrad) propFontWeightGrad.value = e.target.value;
       canvasEngine.saveHistory();
       canvasEngine.render();
     }
@@ -3990,6 +4775,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const preset = btn.getAttribute('data-preset');
       const sel = canvasEngine.getSelected();
       if (!sel || sel.type !== 'text') return;
+
+      if (sel.gradient) sel.gradient.enabled = false;
 
       if (preset === 'yt-yellow') {
         sel.color = '#ffeb3b';
@@ -4173,16 +4960,102 @@ document.addEventListener('DOMContentLoaded', () => {
     const sel = canvasEngine.getSelected();
     if (sel && sel.type === 'shape') {
       sel.color = e.target.value;
+      if (sel.gradient) sel.gradient.enabled = false;
+      if (propShapeColorHex) propShapeColorHex.textContent = e.target.value;
+      canvasEngine.updateInspector();
       canvasEngine.render();
     }
   });
   propShapeColor.addEventListener('change', () => canvasEngine.saveHistory());
+
+  // Shape Fill Mode Segmented Buttons
+  if (btnShapeFillSolid && btnShapeFillGradient) {
+    btnShapeFillSolid.addEventListener('click', () => {
+      const sel = canvasEngine.getSelected();
+      if (sel && sel.type === 'shape') {
+        if (sel.gradient) sel.gradient.enabled = false;
+        canvasEngine.updateInspector();
+        canvasEngine.saveHistory();
+        canvasEngine.render();
+      }
+    });
+
+    btnShapeFillGradient.addEventListener('click', () => {
+      const sel = canvasEngine.getSelected();
+      if (sel && sel.type === 'shape') {
+        sel.gradient = {
+          enabled: true,
+          color1: propShapeGradColor1 ? propShapeGradColor1.value : '#ff5722',
+          color2: propShapeGradColor2 ? propShapeGradColor2.value : '#b91c1c',
+          direction: propShapeGradDir ? propShapeGradDir.value : 'horizontal'
+        };
+        canvasEngine.updateInspector();
+        canvasEngine.saveHistory();
+        canvasEngine.render();
+      }
+    });
+  }
+
+  const updateShapeGradientValues = () => {
+    const sel = canvasEngine.getSelected();
+    if (sel && sel.type === 'shape') {
+      const isTrans = propShapeGradTransparent ? propShapeGradTransparent.checked : false;
+      if (propShapeGradColor2) {
+        const c2Group = propShapeGradColor2.closest('.prop-group');
+        if (c2Group) c2Group.style.display = isTrans ? 'none' : 'flex';
+      }
+      sel.gradient = {
+        enabled: true,
+        transparent: isTrans,
+        color1: propShapeGradColor1 ? propShapeGradColor1.value : '#ff5722',
+        color2: propShapeGradColor2 ? propShapeGradColor2.value : '#b91c1c',
+        direction: propShapeGradDir ? propShapeGradDir.value : 'horizontal'
+      };
+      canvasEngine.render();
+    }
+  };
+
+  if (propShapeGradColor1) {
+    propShapeGradColor1.addEventListener('input', updateShapeGradientValues);
+    propShapeGradColor1.addEventListener('change', () => canvasEngine.saveHistory());
+  }
+  if (propShapeGradColor2) {
+    propShapeGradColor2.addEventListener('input', updateShapeGradientValues);
+    propShapeGradColor2.addEventListener('change', () => canvasEngine.saveHistory());
+  }
+  if (propShapeGradTransparent) {
+    propShapeGradTransparent.addEventListener('change', () => {
+      updateShapeGradientValues();
+      canvasEngine.saveHistory();
+    });
+  }
+  if (propShapeGradDir) {
+    propShapeGradDir.addEventListener('change', () => {
+      updateShapeGradientValues();
+      canvasEngine.saveHistory();
+    });
+  }
+  if (propShapeRadiusGrad) {
+    propShapeRadiusGrad.addEventListener('input', (e) => {
+      const sel = canvasEngine.getSelected();
+      if (sel && sel.type === 'shape') {
+        sel.borderRadius = parseInt(e.target.value, 10);
+        if (propShapeRadiusGradVal) propShapeRadiusGradVal.textContent = e.target.value;
+        if (propShapeRadius) propShapeRadius.value = e.target.value;
+        if (propShapeRadiusVal) propShapeRadiusVal.textContent = e.target.value;
+        canvasEngine.render();
+      }
+    });
+    propShapeRadiusGrad.addEventListener('change', () => canvasEngine.saveHistory());
+  }
 
   propShapeRadius.addEventListener('input', (e) => {
     const sel = canvasEngine.getSelected();
     if (sel && sel.type === 'shape') {
       sel.borderRadius = parseInt(e.target.value, 10);
       propShapeRadiusVal.textContent = e.target.value;
+      if (propShapeRadiusGrad) propShapeRadiusGrad.value = e.target.value;
+      if (propShapeRadiusGradVal) propShapeRadiusGradVal.textContent = e.target.value;
       canvasEngine.render();
     }
   });
@@ -4197,6 +5070,162 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
   propShapeOpacity.addEventListener('change', () => canvasEngine.saveHistory());
+
+  // Gradient Layer Inspector Listeners
+  if (btnGradLayerFitCanvas) {
+    btnGradLayerFitCanvas.addEventListener('click', () => {
+      const sel = canvasEngine.getSelected();
+      const active = canvasEngine.getActiveCanvas();
+      if (sel && sel.type === 'gradient' && active) {
+        sel.x = Math.round(active.width / 2);
+        sel.y = Math.round(active.height / 2);
+        sel.width = active.width;
+        sel.height = active.height;
+        sel.rotation = 0;
+        canvasEngine.render();
+        canvasEngine.saveHistory();
+        showToast('Gradiente ajustado ao tamanho da tela!', 'success');
+      }
+    });
+  }
+
+  if (btnGradLayerModeTransparent && btnGradLayerModeTwoColors) {
+    btnGradLayerModeTransparent.addEventListener('click', () => {
+      const sel = canvasEngine.getSelected();
+      if (sel && sel.type === 'gradient') {
+        sel.mode = 'transparent';
+        sel.transparent = true;
+        btnGradLayerModeTransparent.classList.add('active');
+        btnGradLayerModeTwoColors.classList.remove('active');
+        if (gradLayerColor2Group) gradLayerColor2Group.style.display = 'none';
+        canvasEngine.render();
+        canvasEngine.saveHistory();
+      }
+    });
+
+    btnGradLayerModeTwoColors.addEventListener('click', () => {
+      const sel = canvasEngine.getSelected();
+      if (sel && sel.type === 'gradient') {
+        sel.mode = 'two-colors';
+        sel.transparent = false;
+        btnGradLayerModeTransparent.classList.remove('active');
+        btnGradLayerModeTwoColors.classList.add('active');
+        if (gradLayerColor2Group) gradLayerColor2Group.style.display = 'flex';
+        canvasEngine.render();
+        canvasEngine.saveHistory();
+      }
+    });
+  }
+
+  if (gradLayerPresets) {
+    gradLayerPresets.querySelectorAll('.style-preset-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const sel = canvasEngine.getSelected();
+        if (sel && sel.type === 'gradient') {
+          const c1 = btn.getAttribute('data-gcolor1') || '#000000';
+          const c2 = btn.getAttribute('data-gcolor2') || 'transparent';
+          const dir = btn.getAttribute('data-gdir') || 'bottom-up';
+
+          sel.color1 = c1;
+          sel.direction = dir;
+          if (c2 === 'transparent') {
+            sel.mode = 'transparent';
+            sel.transparent = true;
+          } else {
+            sel.mode = 'two-colors';
+            sel.transparent = false;
+            sel.color2 = c2;
+          }
+          canvasEngine.updateInspector();
+          canvasEngine.render();
+          canvasEngine.saveHistory();
+        }
+      });
+    });
+  }
+
+  if (propGradLayerColor1) {
+    propGradLayerColor1.addEventListener('input', (e) => {
+      const sel = canvasEngine.getSelected();
+      if (sel && sel.type === 'gradient') {
+        sel.color1 = e.target.value;
+        if (propGradLayerColor1Hex) propGradLayerColor1Hex.textContent = e.target.value;
+        canvasEngine.render();
+      }
+    });
+    propGradLayerColor1.addEventListener('change', () => canvasEngine.saveHistory());
+  }
+
+  if (propGradLayerColor2) {
+    propGradLayerColor2.addEventListener('input', (e) => {
+      const sel = canvasEngine.getSelected();
+      if (sel && sel.type === 'gradient') {
+        sel.color2 = e.target.value;
+        if (propGradLayerColor2Hex) propGradLayerColor2Hex.textContent = e.target.value;
+        canvasEngine.render();
+      }
+    });
+    propGradLayerColor2.addEventListener('change', () => canvasEngine.saveHistory());
+  }
+
+  if (propGradLayerDir) {
+    propGradLayerDir.addEventListener('change', (e) => {
+      const sel = canvasEngine.getSelected();
+      if (sel && sel.type === 'gradient') {
+        sel.direction = e.target.value;
+        canvasEngine.render();
+        canvasEngine.saveHistory();
+      }
+    });
+  }
+
+  if (btnGradLayerInvert) {
+    btnGradLayerInvert.addEventListener('click', () => {
+      const sel = canvasEngine.getSelected();
+      if (sel && sel.type === 'gradient') {
+        const dirMap = {
+          'bottom-up': 'top-down',
+          'top-down': 'bottom-up',
+          'left-right': 'right-left',
+          'right-left': 'left-right'
+        };
+        if (dirMap[sel.direction]) {
+          sel.direction = dirMap[sel.direction];
+        } else if (sel.mode === 'two-colors' && !sel.transparent) {
+          const tmp = sel.color1;
+          sel.color1 = sel.color2;
+          sel.color2 = tmp;
+        }
+        canvasEngine.updateInspector();
+        canvasEngine.render();
+        canvasEngine.saveHistory();
+      }
+    });
+  }
+
+  if (propGradLayerOpacity) {
+    propGradLayerOpacity.addEventListener('input', (e) => {
+      const sel = canvasEngine.getSelected();
+      if (sel && sel.type === 'gradient') {
+        sel.opacity = parseInt(e.target.value, 10) / 100;
+        if (propGradLayerOpacityVal) propGradLayerOpacityVal.textContent = e.target.value;
+        canvasEngine.render();
+      }
+    });
+    propGradLayerOpacity.addEventListener('change', () => canvasEngine.saveHistory());
+  }
+
+  if (propGradLayerRadius) {
+    propGradLayerRadius.addEventListener('input', (e) => {
+      const sel = canvasEngine.getSelected();
+      if (sel && sel.type === 'gradient') {
+        sel.borderRadius = parseInt(e.target.value, 10);
+        if (propGradLayerRadiusVal) propGradLayerRadiusVal.textContent = e.target.value;
+        canvasEngine.render();
+      }
+    });
+    propGradLayerRadius.addEventListener('change', () => canvasEngine.saveHistory());
+  }
 
   // Layer & Object Actions
   btnBringForward.addEventListener('click', () => canvasEngine.bringForward());
@@ -4336,6 +5365,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const carouselDuplicateSlideBtn = document.getElementById('carouselDuplicateSlideBtn');
   const carouselDeleteSlideBtn = document.getElementById('carouselDeleteSlideBtn');
   const carouselToggleNumberingBtn = document.getElementById('carouselToggleNumberingBtn');
+  const carouselToggleSnappingBtn = document.getElementById('carouselToggleSnappingBtn');
   const carouselUndoBtn = document.getElementById('carouselUndoBtn');
   const carouselRedoBtn = document.getElementById('carouselRedoBtn');
   const carouselClearBtn = document.getElementById('carouselClearBtn');
@@ -4414,6 +5444,27 @@ document.addEventListener('DOMContentLoaded', () => {
   const carouselBtnDuplicateShape = document.getElementById('carouselBtnDuplicateShape');
   const carouselBtnDeleteShape = document.getElementById('carouselBtnDeleteShape');
 
+  // Carousel Gradient Inspector elements
+  const carouselToolAddGradientLayer = document.getElementById('carouselToolAddGradientLayer');
+  const carouselGradientInspector = document.getElementById('carouselGradientInspector');
+  const carouselBtnGradFitSlide = document.getElementById('carouselBtnGradFitSlide');
+  const carouselBtnGradModeTransparent = document.getElementById('carouselBtnGradModeTransparent');
+  const carouselBtnGradModeTwoColors = document.getElementById('carouselBtnGradModeTwoColors');
+  const carouselGradPresets = document.getElementById('carouselGradPresets');
+  const carouselPropGradColor1 = document.getElementById('carouselPropGradColor1');
+  const carouselPropGradColor1Hex = document.getElementById('carouselPropGradColor1Hex');
+  const carouselGradColor2Group = document.getElementById('carouselGradColor2Group');
+  const carouselPropGradColor2 = document.getElementById('carouselPropGradColor2');
+  const carouselPropGradColor2Hex = document.getElementById('carouselPropGradColor2Hex');
+  const carouselPropGradDir = document.getElementById('carouselPropGradDir');
+  const carouselBtnGradInvert = document.getElementById('carouselBtnGradInvert');
+  const carouselPropGradOpacity = document.getElementById('carouselPropGradOpacity');
+  const carouselPropGradOpacityVal = document.getElementById('carouselPropGradOpacityVal');
+  const carouselPropGradRadius = document.getElementById('carouselPropGradRadius');
+  const carouselPropGradRadiusVal = document.getElementById('carouselPropGradRadiusVal');
+  const carouselBtnDuplicateGrad = document.getElementById('carouselBtnDuplicateGrad');
+  const carouselBtnDeleteGrad = document.getElementById('carouselBtnDeleteGrad');
+
   class CarouselEngine {
     constructor() {
       this.slides = [];
@@ -4425,6 +5476,8 @@ document.addEventListener('DOMContentLoaded', () => {
       this.height = 1350;
       this.defaultBgColor = '#0f172a';
       this.showNumbering = true;
+      this.snappingEnabled = true;
+      this.activeSmartGuides = [];
 
       // Interaction state
       this.isDragging = false;
@@ -4868,6 +5921,110 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast(this.showNumbering ? 'Numeração automática ativada (1/N)' : 'Numeração desativada', 'info');
     }
 
+    toggleSnapping() {
+      this.snappingEnabled = !this.snappingEnabled;
+      if (carouselToggleSnappingBtn) {
+        carouselToggleSnappingBtn.classList.toggle('active', this.snappingEnabled);
+      }
+      this.activeSmartGuides = [];
+      this.renderAll();
+      showToast(this.snappingEnabled ? '🧲 Guias Magnéticas ativadas' : 'Guias Magnéticas desativadas', 'info');
+    }
+
+    computeSnapping(sel, targetX, targetY) {
+      const active = this.getActiveSlide();
+      if (!active) return { x: targetX, y: targetY, guides: [] };
+
+      const sW = active.width;
+      const sH = active.height;
+      const w = sel.width || 100;
+      const h = sel.height || 50;
+
+      const SNAP_THRESHOLD = 8;
+
+      const xTargets = [
+        { pos: sW / 2, kind: 'center' },
+        { pos: 0, kind: 'canvas' },
+        { pos: sW, kind: 'canvas' }
+      ];
+
+      const yTargets = [
+        { pos: sH / 2, kind: 'center' },
+        { pos: 0, kind: 'canvas' },
+        { pos: sH, kind: 'canvas' }
+      ];
+
+      const otherElements = (active.elements || []).filter(el => el.id !== sel.id);
+      otherElements.forEach(other => {
+        const oW = other.width || 100;
+        const oH = other.height || 50;
+        xTargets.push(
+          { pos: other.x + oW / 2, kind: 'element' },
+          { pos: other.x, kind: 'element' },
+          { pos: other.x + oW, kind: 'element' }
+        );
+        yTargets.push(
+          { pos: other.y + oH / 2, kind: 'element' },
+          { pos: other.y, kind: 'element' },
+          { pos: other.y + oH, kind: 'element' }
+        );
+      });
+
+      let snappedX = targetX;
+      let minDiffX = SNAP_THRESHOLD + 1;
+      let bestXGuide = null;
+
+      const xPoints = [
+        { val: targetX + w / 2, offset: w / 2 },
+        { val: targetX, offset: 0 },
+        { val: targetX + w, offset: w }
+      ];
+
+      xTargets.forEach(t => {
+        xPoints.forEach(pt => {
+          const rawDiff = Math.abs(pt.val - t.pos);
+          const effectiveDiff = (t.kind === 'center') ? rawDiff * 0.85 : rawDiff;
+          if (rawDiff <= SNAP_THRESHOLD && effectiveDiff < minDiffX) {
+            minDiffX = effectiveDiff;
+            snappedX = t.pos - pt.offset;
+            bestXGuide = { type: 'v', pos: t.pos, kind: t.kind };
+          }
+        });
+      });
+
+      let snappedY = targetY;
+      let minDiffY = SNAP_THRESHOLD + 1;
+      let bestYGuide = null;
+
+      const yPoints = [
+        { val: targetY + h / 2, offset: h / 2 },
+        { val: targetY, offset: 0 },
+        { val: targetY + h, offset: h }
+      ];
+
+      yTargets.forEach(t => {
+        yPoints.forEach(pt => {
+          const rawDiff = Math.abs(pt.val - t.pos);
+          const effectiveDiff = (t.kind === 'center') ? rawDiff * 0.85 : rawDiff;
+          if (rawDiff <= SNAP_THRESHOLD && effectiveDiff < minDiffY) {
+            minDiffY = effectiveDiff;
+            snappedY = t.pos - pt.offset;
+            bestYGuide = { type: 'h', pos: t.pos, kind: t.kind };
+          }
+        });
+      });
+
+      const guides = [];
+      if (bestXGuide) guides.push(bestXGuide);
+      if (bestYGuide) guides.push(bestYGuide);
+
+      return {
+        x: Math.round(snappedX),
+        y: Math.round(snappedY),
+        guides
+      };
+    }
+
     // Canvas Element Interaction
     handleCanvasMouseDown(slideId, e) {
       const slide = this.slides.find(s => s.id === slideId);
@@ -4979,6 +6136,41 @@ document.addEventListener('DOMContentLoaded', () => {
           ctx.fillStyle = el.color || '#ff5722';
           this.drawRoundedRect(ctx, el.x, el.y, el.width, el.height, el.borderRadius || 0);
           ctx.fill();
+        } else if (el.type === 'gradient') {
+          const w = el.width !== undefined ? el.width : slide.width;
+          const h = el.height !== undefined ? el.height : slide.height;
+          const rad = el.borderRadius || 0;
+          const dir = el.direction || 'bottom-up';
+          const c1 = el.color1 || '#000000';
+          const isTrans = el.mode === 'transparent' || el.transparent === true;
+          const c2 = isTrans ? hexToRgba(c1, 0) : (el.color2 || '#000000');
+          let grad;
+          if (dir === 'radial') {
+            const cx = el.x + w / 2;
+            const cy = el.y + h / 2;
+            grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(w, h) / 2);
+          } else if (dir === 'bottom-up') {
+            grad = ctx.createLinearGradient(el.x, el.y + h, el.x, el.y);
+          } else if (dir === 'top-down') {
+            grad = ctx.createLinearGradient(el.x, el.y, el.x, el.y + h);
+          } else if (dir === 'left-right') {
+            grad = ctx.createLinearGradient(el.x, el.y, el.x + w, el.y);
+          } else if (dir === 'right-left') {
+            grad = ctx.createLinearGradient(el.x + w, el.y, el.x, el.y);
+          } else if (dir === 'diagonal') {
+            grad = ctx.createLinearGradient(el.x, el.y, el.x + w, el.y + h);
+          } else {
+            grad = ctx.createLinearGradient(el.x, el.y + h, el.x, el.y);
+          }
+          grad.addColorStop(0, c1);
+          grad.addColorStop(1, c2);
+          ctx.fillStyle = grad;
+          if (rad > 0) {
+            this.drawRoundedRect(ctx, el.x, el.y, w, h, rad);
+            ctx.fill();
+          } else {
+            ctx.fillRect(el.x, el.y, w, h);
+          }
         } else if (el.type === 'image' && el.img) {
           if (el.shadow && el.shadow.enabled) {
             ctx.shadowColor = el.shadow.color || 'rgba(0,0,0,0.5)';
@@ -5113,6 +6305,27 @@ document.addEventListener('DOMContentLoaded', () => {
           ctx.restore();
         }
       }
+
+      // Smart Guides & Magnetic Snapping lines (only when dragging and not exporting)
+      if (!isExporting && this.snappingEnabled && this.activeSmartGuides && this.activeSmartGuides.length > 0 && slide.id === this.activeSlideId) {
+        ctx.save();
+        this.activeSmartGuides.forEach(g => {
+          const isCenter = g.kind === 'center';
+          ctx.strokeStyle = isCenter ? '#ff007a' : (g.kind === 'canvas' ? '#94a3b8' : '#00e5ff');
+          ctx.lineWidth = isCenter ? 2 : 1.5;
+          ctx.setLineDash(isCenter ? [] : [6, 4]);
+          ctx.beginPath();
+          if (g.type === 'v') {
+            ctx.moveTo(g.pos, 0);
+            ctx.lineTo(g.pos, slide.height);
+          } else if (g.type === 'h') {
+            ctx.moveTo(0, g.pos);
+            ctx.lineTo(slide.width, g.pos);
+          }
+          ctx.stroke();
+        });
+        ctx.restore();
+      }
     }
 
     drawRoundedRect(ctx, x, y, width, height, radius) {
@@ -5168,6 +6381,36 @@ document.addEventListener('DOMContentLoaded', () => {
         y: Math.round(active.height / 2 - 60),
         width: 480,
         height: 120
+      };
+
+      active.elements.push(el);
+      active.selectedId = el.id;
+      this.saveHistory();
+      this.renderAll();
+      this.updateInspector();
+      this.renderLayers();
+    }
+
+    addGradientLayer() {
+      const active = this.getActiveSlide();
+      if (!active) return;
+
+      const el = {
+        id: 'el_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+        type: 'gradient',
+        name: 'Camada Gradiente',
+        mode: 'transparent',
+        transparent: true,
+        color1: '#000000',
+        color2: '#000000',
+        direction: 'bottom-up',
+        width: active.width,
+        height: Math.round(active.height * 0.6),
+        borderRadius: 0,
+        opacity: 0.9,
+        x: 0,
+        y: Math.round(active.height * 0.4),
+        rotation: 0
       };
 
       active.elements.push(el);
@@ -5394,6 +6637,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let label = el.text ? el.text.slice(0, 16) : 'Texto';
         if (el.type === 'image') { icon = '🖼️'; label = 'Imagem'; }
         else if (el.type === 'shape') { icon = '⬛'; label = 'Tarja / Forma'; }
+        else if (el.type === 'gradient') { icon = '🌈'; label = el.name || 'Camada Gradiente'; }
 
         item.innerHTML = `
           <span class="layer-drag-handle" title="Arrastar para reordenar">
@@ -5468,6 +6712,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (carouselTextInspector) carouselTextInspector.classList.add('hidden');
         if (carouselImageInspector) carouselImageInspector.classList.add('hidden');
         if (carouselShapeInspector) carouselShapeInspector.classList.add('hidden');
+        if (carouselGradientInspector) carouselGradientInspector.classList.add('hidden');
         return;
       }
 
@@ -5475,6 +6720,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (carouselTextInspector) carouselTextInspector.classList.toggle('hidden', sel.type !== 'text');
       if (carouselImageInspector) carouselImageInspector.classList.toggle('hidden', sel.type !== 'image');
       if (carouselShapeInspector) carouselShapeInspector.classList.toggle('hidden', sel.type !== 'shape');
+      if (carouselGradientInspector) carouselGradientInspector.classList.toggle('hidden', sel.type !== 'gradient');
 
       if (sel.type === 'text') {
         carouselPropTextContent.value = sel.text || '';
@@ -5514,6 +6760,25 @@ document.addEventListener('DOMContentLoaded', () => {
         carouselPropShapeRadius.value = sel.borderRadius || 12;
         carouselPropShapeOpacity.value = Math.round((sel.opacity !== undefined ? sel.opacity : 1) * 100);
         carouselPropShapeOpacityVal.textContent = carouselPropShapeOpacity.value;
+      } else if (sel.type === 'gradient') {
+        const isTrans = sel.mode === 'transparent' || sel.transparent === true;
+        if (carouselBtnGradModeTransparent) carouselBtnGradModeTransparent.classList.toggle('active', isTrans);
+        if (carouselBtnGradModeTwoColors) carouselBtnGradModeTwoColors.classList.toggle('active', !isTrans);
+        if (carouselGradColor2Group) carouselGradColor2Group.style.display = isTrans ? 'none' : 'flex';
+
+        if (carouselPropGradColor1) carouselPropGradColor1.value = sel.color1 || '#000000';
+        if (carouselPropGradColor1Hex) carouselPropGradColor1Hex.textContent = sel.color1 || '#000000';
+        if (carouselPropGradColor2) carouselPropGradColor2.value = sel.color2 || '#000000';
+        if (carouselPropGradColor2Hex) carouselPropGradColor2Hex.textContent = sel.color2 || '#000000';
+        if (carouselPropGradDir) carouselPropGradDir.value = sel.direction || 'bottom-up';
+
+        const opacityPct = Math.round((sel.opacity !== undefined ? sel.opacity : 1) * 100);
+        if (carouselPropGradOpacity) carouselPropGradOpacity.value = opacityPct;
+        if (carouselPropGradOpacityVal) carouselPropGradOpacityVal.textContent = opacityPct;
+
+        const rad = sel.borderRadius !== undefined ? sel.borderRadius : 0;
+        if (carouselPropGradRadius) carouselPropGradRadius.value = rad;
+        if (carouselPropGradRadiusVal) carouselPropGradRadiusVal.textContent = rad;
       }
     }
 
@@ -5597,6 +6862,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (carouselDuplicateSlideBtn) carouselDuplicateSlideBtn.addEventListener('click', () => this.duplicateSlide());
       if (carouselDeleteSlideBtn) carouselDeleteSlideBtn.addEventListener('click', () => this.deleteSlide());
       if (carouselToggleNumberingBtn) carouselToggleNumberingBtn.addEventListener('click', () => this.toggleNumbering());
+      if (carouselToggleSnappingBtn) carouselToggleSnappingBtn.addEventListener('click', () => this.toggleSnapping());
 
       // Undo / Redo
       if (carouselUndoBtn) carouselUndoBtn.addEventListener('click', () => this.undo());
@@ -5624,6 +6890,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Tool buttons
       if (carouselToolAddText) carouselToolAddText.addEventListener('click', () => this.addText('Novo Texto'));
       if (carouselToolAddBadge) carouselToolAddBadge.addEventListener('click', () => this.addBadge());
+      if (carouselToolAddGradientLayer) carouselToolAddGradientLayer.addEventListener('click', () => this.addGradientLayer());
 
       // Quick CTA buttons
       document.querySelectorAll('.carousel-cta-btn').forEach(btn => {
@@ -5943,6 +7210,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (carouselBtnDuplicateImg) carouselBtnDuplicateImg.addEventListener('click', duplicateActiveElement);
       if (carouselBtnDeleteShape) carouselBtnDeleteShape.addEventListener('click', deleteActiveElement);
       if (carouselBtnDuplicateShape) carouselBtnDuplicateShape.addEventListener('click', duplicateActiveElement);
+      if (carouselBtnDeleteGrad) carouselBtnDeleteGrad.addEventListener('click', deleteActiveElement);
+      if (carouselBtnDuplicateGrad) carouselBtnDuplicateGrad.addEventListener('click', duplicateActiveElement);
 
       // Image properties
       if (carouselPropImgWidth) {
@@ -6061,6 +7330,171 @@ document.addEventListener('DOMContentLoaded', () => {
         carouselPropShapeOpacity.addEventListener('change', () => this.saveHistory());
       }
 
+      // Carousel Gradient layer properties
+      if (carouselBtnGradFitSlide) {
+        carouselBtnGradFitSlide.addEventListener('click', () => {
+          const active = this.getActiveSlide();
+          const sel = active ? active.elements.find(el => el.id === active.selectedId) : null;
+          if (sel && sel.type === 'gradient') {
+            sel.x = 0;
+            sel.y = 0;
+            sel.width = active.width;
+            sel.height = active.height;
+            sel.rotation = 0;
+            this.renderAll();
+            this.saveHistory();
+            showToast('Gradiente ajustado ao tamanho do slide!', 'success');
+          }
+        });
+      }
+
+      if (carouselBtnGradModeTransparent && carouselBtnGradModeTwoColors) {
+        carouselBtnGradModeTransparent.addEventListener('click', () => {
+          const active = this.getActiveSlide();
+          const sel = active ? active.elements.find(el => el.id === active.selectedId) : null;
+          if (sel && sel.type === 'gradient') {
+            sel.mode = 'transparent';
+            sel.transparent = true;
+            carouselBtnGradModeTransparent.classList.add('active');
+            carouselBtnGradModeTwoColors.classList.remove('active');
+            if (carouselGradColor2Group) carouselGradColor2Group.style.display = 'none';
+            this.renderAll();
+            this.saveHistory();
+          }
+        });
+
+        carouselBtnGradModeTwoColors.addEventListener('click', () => {
+          const active = this.getActiveSlide();
+          const sel = active ? active.elements.find(el => el.id === active.selectedId) : null;
+          if (sel && sel.type === 'gradient') {
+            sel.mode = 'two-colors';
+            sel.transparent = false;
+            carouselBtnGradModeTransparent.classList.remove('active');
+            carouselBtnGradModeTwoColors.classList.add('active');
+            if (carouselGradColor2Group) carouselGradColor2Group.style.display = 'flex';
+            this.renderAll();
+            this.saveHistory();
+          }
+        });
+      }
+
+      if (carouselGradPresets) {
+        carouselGradPresets.querySelectorAll('.style-preset-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const active = this.getActiveSlide();
+            const sel = active ? active.elements.find(el => el.id === active.selectedId) : null;
+            if (sel && sel.type === 'gradient') {
+              const c1 = btn.getAttribute('data-gcolor1') || '#000000';
+              const c2 = btn.getAttribute('data-gcolor2') || 'transparent';
+              const dir = btn.getAttribute('data-gdir') || 'bottom-up';
+
+              sel.color1 = c1;
+              sel.direction = dir;
+              if (c2 === 'transparent') {
+                sel.mode = 'transparent';
+                sel.transparent = true;
+              } else {
+                sel.mode = 'two-colors';
+                sel.transparent = false;
+                sel.color2 = c2;
+              }
+              this.updateInspector();
+              this.renderAll();
+              this.saveHistory();
+            }
+          });
+        });
+      }
+
+      if (carouselPropGradColor1) {
+        carouselPropGradColor1.addEventListener('input', (e) => {
+          const active = this.getActiveSlide();
+          const sel = active ? active.elements.find(el => el.id === active.selectedId) : null;
+          if (sel && sel.type === 'gradient') {
+            sel.color1 = e.target.value;
+            if (carouselPropGradColor1Hex) carouselPropGradColor1Hex.textContent = e.target.value;
+            this.renderAll();
+          }
+        });
+        carouselPropGradColor1.addEventListener('change', () => this.saveHistory());
+      }
+
+      if (carouselPropGradColor2) {
+        carouselPropGradColor2.addEventListener('input', (e) => {
+          const active = this.getActiveSlide();
+          const sel = active ? active.elements.find(el => el.id === active.selectedId) : null;
+          if (sel && sel.type === 'gradient') {
+            sel.color2 = e.target.value;
+            if (carouselPropGradColor2Hex) carouselPropGradColor2Hex.textContent = e.target.value;
+            this.renderAll();
+          }
+        });
+        carouselPropGradColor2.addEventListener('change', () => this.saveHistory());
+      }
+
+      if (carouselPropGradDir) {
+        carouselPropGradDir.addEventListener('change', (e) => {
+          const active = this.getActiveSlide();
+          const sel = active ? active.elements.find(el => el.id === active.selectedId) : null;
+          if (sel && sel.type === 'gradient') {
+            sel.direction = e.target.value;
+            this.renderAll();
+            this.saveHistory();
+          }
+        });
+      }
+
+      if (carouselBtnGradInvert) {
+        carouselBtnGradInvert.addEventListener('click', () => {
+          const active = this.getActiveSlide();
+          const sel = active ? active.elements.find(el => el.id === active.selectedId) : null;
+          if (sel && sel.type === 'gradient') {
+            const dirMap = {
+              'bottom-up': 'top-down',
+              'top-down': 'bottom-up',
+              'left-right': 'right-left',
+              'right-left': 'left-right'
+            };
+            if (dirMap[sel.direction]) {
+              sel.direction = dirMap[sel.direction];
+            } else if (sel.mode === 'two-colors' && !sel.transparent) {
+              const tmp = sel.color1;
+              sel.color1 = sel.color2;
+              sel.color2 = tmp;
+            }
+            this.updateInspector();
+            this.renderAll();
+            this.saveHistory();
+          }
+        });
+      }
+
+      if (carouselPropGradOpacity) {
+        carouselPropGradOpacity.addEventListener('input', (e) => {
+          const active = this.getActiveSlide();
+          const sel = active ? active.elements.find(el => el.id === active.selectedId) : null;
+          if (sel && sel.type === 'gradient') {
+            sel.opacity = parseInt(e.target.value, 10) / 100;
+            if (carouselPropGradOpacityVal) carouselPropGradOpacityVal.textContent = e.target.value;
+            this.renderAll();
+          }
+        });
+        carouselPropGradOpacity.addEventListener('change', () => this.saveHistory());
+      }
+
+      if (carouselPropGradRadius) {
+        carouselPropGradRadius.addEventListener('input', (e) => {
+          const active = this.getActiveSlide();
+          const sel = active ? active.elements.find(el => el.id === active.selectedId) : null;
+          if (sel && sel.type === 'gradient') {
+            sel.borderRadius = parseInt(e.target.value, 10) || 0;
+            if (carouselPropGradRadiusVal) carouselPropGradRadiusVal.textContent = e.target.value;
+            this.renderAll();
+          }
+        });
+        carouselPropGradRadius.addEventListener('change', () => this.saveHistory());
+      }
+
       // Viewport Pan and Zoom
       if (carouselViewport) {
         carouselViewport.addEventListener('wheel', (e) => {
@@ -6109,8 +7543,20 @@ document.addEventListener('DOMContentLoaded', () => {
         if (this.isDragging) {
           const dx = curX - this.dragStartX;
           const dy = curY - this.dragStartY;
-          sel.x = Math.round(this.initialElementState.x + dx);
-          sel.y = Math.round(this.initialElementState.y + dy);
+          let targetX = Math.round(this.initialElementState.x + dx);
+          let targetY = Math.round(this.initialElementState.y + dy);
+
+          if (this.snappingEnabled && !e.altKey) {
+            const snap = this.computeSnapping(sel, targetX, targetY);
+            targetX = snap.x;
+            targetY = snap.y;
+            this.activeSmartGuides = snap.guides;
+          } else {
+            this.activeSmartGuides = [];
+          }
+
+          sel.x = targetX;
+          sel.y = targetY;
           this.renderAll();
         } else if (this.isResizing) {
           const dx = curX - this.dragStartX;
@@ -6155,6 +7601,8 @@ document.addEventListener('DOMContentLoaded', () => {
           this.isResizing = false;
           this.isRotating = false;
           this.activeHandle = null;
+          this.activeSmartGuides = [];
+          this.renderAll();
           this.saveHistory();
           this.updateInspector();
         }
@@ -6221,5 +7669,60 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const carouselEngine = new CarouselEngine();
   window.carouselEngine = carouselEngine;
+
+  // Dynamic Sidebar Tips Rotator (New tip on every page reload or click)
+  const SIDEBAR_TIPS = [
+    { icon: '💡', text: 'Cole imagens diretamente na tela com <strong>Ctrl+V</strong> (ou <strong>Cmd+V</strong>) no Criador de Thumbnails!' },
+    { icon: '🖐️', text: 'Segure a barra de <strong>Espaço</strong> e arraste com o mouse para navegar livremente pela tela.' },
+    { icon: '⌨️', text: 'Pressione a tecla <strong>?</strong> a qualquer momento para abrir a lista completa de atalhos e gestos.' },
+    { icon: '↩️', text: 'Use <strong>Ctrl+Z</strong> para desfazer e <strong>Ctrl+Shift+Z</strong> para refazer qualquer ação na arte.' },
+    { icon: '🌈', text: 'Adicione uma <strong>Camada de Gradiente</strong> na base para dar contraste profissional aos seus títulos!' },
+    { icon: '📦', text: 'No Criador de Carrosséis, você pode baixar todas as lâminas de uma só vez em um arquivo <strong>ZIP</strong>.' },
+    { icon: '🔗', text: 'Vincule dois canvas clicando no ícone de <strong>corrente 🔗</strong> para sincronizar edições em tempo real!' },
+    { icon: '🛡️', text: 'Ative a <strong>Safe Zone do YouTube</strong> para garantir que o selo de duração não cubra suas legendas.' },
+    { icon: '📐', text: 'Use o botão <strong>Preencher Canvas</strong> para ajustar imagens ou gradientes à tela toda em 1 clique.' },
+    { icon: '📋', text: 'Duplique qualquer elemento selecionado rapidamente pressionando o atalho <strong>Ctrl+D</strong>.' },
+    { icon: '🚀', text: 'No Acesso Rápido, você pode filtrar seus links e ferramentas favoritos por categorias com 1 clique.' },
+    { icon: '📱', text: 'No Criador de Carrosséis, o formato <strong>1080×1350 (4:5)</strong> ocupa a tela cheia no feed do Instagram.' },
+    { icon: '✨', text: 'Alterne entre <strong>Cor → Transparente</strong> ou <strong>Duas Cores</strong> no painel de Gradientes.' },
+    { icon: '🔤', text: 'Dê dois cliques em um texto para editá-lo rapidamente direto pelo painel de propriedades.' },
+    { icon: '🥞', text: 'Arraste as camadas na lista lateral para ajustar a ordem de sobreposição (frente/trás).' },
+    { icon: '🧲', text: 'As <strong>Guias Magnéticas</strong> alinham ao centro da tela e com outros elementos! Segure <strong>Alt</strong> para ajuste livre.' },
+    { icon: '🎯', text: 'Use o dropdown no topo da prancheta para trocar o formato da arte entre YouTube, Shorts, Stories e Banner.' }
+  ];
+
+  function showNextSidebarTip(forceNext = false) {
+    const tipTextEl = document.getElementById('sidebarTipText');
+    const tipIconEl = document.getElementById('sidebarTipIcon');
+    if (!tipTextEl) return;
+
+    let lastIdx = parseInt(localStorage.getItem('tp_last_tip_index'), 10);
+    if (isNaN(lastIdx) || lastIdx < 0 || lastIdx >= SIDEBAR_TIPS.length) {
+      lastIdx = -1;
+    }
+
+    let nextIdx;
+    if (forceNext) {
+      nextIdx = (lastIdx + 1) % SIDEBAR_TIPS.length;
+    } else {
+      do {
+        nextIdx = Math.floor(Math.random() * SIDEBAR_TIPS.length);
+      } while (SIDEBAR_TIPS.length > 1 && nextIdx === lastIdx);
+    }
+
+    localStorage.setItem('tp_last_tip_index', nextIdx);
+    const tip = SIDEBAR_TIPS[nextIdx];
+    if (tipIconEl && tip.icon) tipIconEl.textContent = tip.icon;
+    tipTextEl.innerHTML = tip.text;
+  }
+
+  showNextSidebarTip();
+
+  const sidebarTipCard = document.getElementById('sidebarTipCard');
+  if (sidebarTipCard) {
+    sidebarTipCard.addEventListener('click', () => {
+      showNextSidebarTip(true);
+    });
+  }
 
 });

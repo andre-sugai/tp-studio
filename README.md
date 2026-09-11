@@ -42,6 +42,20 @@ npx netlify-cli deploy --prod --dir=.
   - Importação e exportação de backups em JSON.
 - **Criador de Thumbnails & Imagens:**
   - **Aba de Tamanhos Anexada ao Canvas:** Dropdown com presets (*1280×720 YouTube, 1080p, Shorts/Reels 9:16, Banner 2560×1440, Personalizado*) anexado como uma aba diretamente no topo da prancheta de trabalho, acompanhando zoom, deslocamentos e redimensionando a arte em tempo real.
+  - **Gradientes Profissionais & Camadas de Fade (v1.20.0):**
+    - **Camada de Gradiente Dedicada:** Adicione camadas de gradiente independentes na barra de ferramentas lateral, reposicionáveis e redimensionáveis por transform handles tanto no Criador de Thumbnails quanto no Criador de Carrosséis.
+    - **Fade para Transparente Puro:** Gradiente da cor escolhida diretamente para o transparente (`rgba(r, g, b, 0)`), eliminando tons acinzentados ou sujos no fade — ideal para sombras inferiores de leitura de legendas, vinhetas, spotlights e iluminação lateral.
+    - **Modo Cor → Transparente ou Duas Cores:** Alterne facilmente entre fade transparente ou transição entre duas tonalidades.
+    - **Presets Rápidos de Fade:** *Fade Base 🌑*, *Fade Topo 🌌*, *Fade Lateral 👈*, *Spotlight 💡*, *Glow Fogo 🔥*, *Glow Ciano ⚡*.
+    - **Controles Intuitivos:** Direções (↑, ↓, →, ←, ↘, 💡 Radial) com botão de inversão rápida, opacidade percentual, cantos arredondados e botão de ação rápida **Preencher Canvas / Tela**.
+    - **Fundo do Canvas & Formas em Gradiente Transparente:** Opção de gradiente transparente estendida também para o fundo do canvas e para tarjas/formas.
+    - **Texto em Gradiente:** Gradientes aplicados nas letras com presets prontos (*Fogo 🔥, Ouro ⭐, Neon ⚡, Verde 🍏, Prata 💎, Pink 🌸*) mantendo contorno (*stroke*) e sombra 100% nítidos.
+  - **Guias Inteligentes & Alinhamento Magnético (v1.21.0):**
+    - **Alinhamento Magnético Dinâmico (Snapping):** Ao arrastar qualquer elemento (texto, imagem, forma ou gradiente), ele é atraído de forma suave e precisa aos centros da tela (`X` e `Y`), às bordas da prancheta e aos centros/bordas de outros elementos da arte.
+    - **Linhas Guias Visuais:** Renderizadas em tempo real com destaque em magenta vibrante (`#ff007a`) para o centro do canvas e ciano brilhante (`#00e5ff`) para alinhamento entre elementos.
+    - **Totalmente Limpas:** Renderizadas na camada de sobreposição vetorial, desaparecem instantaneamente ao soltar o mouse e nunca aparecem nas exportações de imagem.
+    - **Ajuste Livre com Tecla Alt:** Segure a tecla `Alt` durante o arraste para ignorar temporariamente o alinhamento magnético e posicionar livremente pixel a pixel.
+    - **Botão Liga/Desliga:** Botão `🧲 Guias Magnéticas` na barra superior tanto no Criador de Thumbnails quanto no Criador de Carrosséis.
   - Tipografia de alto impacto (*Bebas Neue, Anton, Montserrat, etc.*) com contorno (*stroke*), sombras e tarjas.
   - Imagens com colagem direta via **Ctrl+V / Cmd+V**, espelhamento e controle de camadas.
   - Guia da **Safe Zone do YouTube** (evita cobrir o selo de duração).

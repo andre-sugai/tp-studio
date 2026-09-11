@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TP Estúdio - Dashboard</title>
   <link rel="icon" href="icons/icon-32.png" type="image/png">
-  <link rel="stylesheet" href="dashboard.css?v=1.18.1">
+  <link rel="stylesheet" href="dashboard.css?v=1.21.0">
   <!-- Google Fonts para UI e Criação de Thumbnails -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,7 +21,7 @@
           <img src="icons/icon-48.png" alt="TP Estúdio" width="36" height="36">
           <div class="brand-text">
             <h2>TP Estúdio</h2>
-            <span class="badge">Dashboard v1.18.1</span>
+            <span class="badge">Dashboard v1.21.0</span>
           </div>
         </div>
         <button id="sidebarToggleBtn" class="sidebar-toggle-btn" title="Recolher barra lateral" aria-label="Recolher barra lateral">
@@ -51,9 +51,9 @@
       </nav>
 
       <div class="sidebar-footer">
-        <div class="tip-card">
-          <span class="tip-icon">💡</span>
-          <p>Cole imagens em qualquer lugar com <strong>Ctrl+V</strong> no Criador de Thumbnails!</p>
+        <div class="tip-card" id="sidebarTipCard" title="Clique para ver outra dica 💡" style="cursor: pointer; user-select: none;">
+          <span class="tip-icon" id="sidebarTipIcon">💡</span>
+          <p id="sidebarTipText">Cole imagens em qualquer lugar com <strong>Ctrl+V</strong> no Criador de Thumbnails!</p>
         </div>
       </div>
     </aside>
@@ -116,6 +116,18 @@
             <button id="toggleSafeZoneBtn" class="btn btn-secondary btn-icon-toggle active" title="Mostrar/Ocultar Guia do Selo de Tempo do YouTube (canto inferior direito)">
               <span class="yt-badge-icon">0:00</span>
               <span>Guia YouTube</span>
+            </button>
+
+            <!-- Magnetic Snapping & Smart Guides Toggle -->
+            <button id="toggleSnappingBtn" class="btn btn-secondary btn-icon-toggle active" title="Alinhamento Magnético e Guias Inteligentes (Segure Alt para ajuste livre)">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 3v7a6 6 0 0 0 12 0V3"></path>
+                <line x1="4" y1="3" x2="8" y2="3"></line>
+                <line x1="16" y1="3" x2="20" y2="3"></line>
+                <line x1="6" y1="8" x2="8" y2="8"></line>
+                <line x1="16" y1="8" x2="20" y2="8"></line>
+              </svg>
+              <span>Guias Magnéticas</span>
             </button>
 
             <!-- Undo / Redo -->
@@ -213,6 +225,11 @@
               <span>Forma / Tarja</span>
             </button>
 
+            <button id="toolAddGradientLayer" class="tool-btn" title="Adicionar Camada de Gradiente / Fade">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 15h18" stroke-dasharray="2 2"/><path d="M3 9h18"/></svg>
+              <span>Gradiente</span>
+            </button>
+
             <button id="toolPanCanvas" class="tool-btn" title="Mover Tela / Pan (Atalho: H ou segure Espaço e arraste)">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/><path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>
               <span>Mover Tela</span>
@@ -221,20 +238,74 @@
             <div class="tool-divider"></div>
 
             <div class="tool-section-title">Fundo</div>
-            <div class="bg-color-swatches">
-              <button class="swatch-btn" data-color="#0f172a" style="background: #0f172a;" title="Azul Escuro"></button>
-              <button class="swatch-btn" data-color="#000000" style="background: #000000;" title="Preto Puro"></button>
-              <button class="swatch-btn" data-color="#b91c1c" style="background: #b91c1c;" title="Vermelho YouTube"></button>
-              <button class="swatch-btn" data-color="#1e3a8a" style="background: #1e3a8a;" title="Azul"></button>
-              <button class="swatch-btn" data-color="#047857" style="background: #047857;" title="Verde"></button>
-              <button class="swatch-btn" data-color="#6d28d9" style="background: #6d28d9;" title="Roxo"></button>
-              <button class="swatch-btn" data-color="#ff5722" style="background: #ff5722;" title="Laranja TP"></button>
-              <button class="swatch-btn" data-color="#ffffff" style="background: #ffffff;" title="Branco"></button>
+            <div class="btn-group-segmented" id="bgTypeSegmented">
+              <button type="button" class="btn-seg active" id="btnBgModeSolid" data-mode="solid">Sólido</button>
+              <button type="button" class="btn-seg" id="btnBgModeGradient" data-mode="gradient">Gradiente</button>
             </div>
-            
-            <div class="custom-bg-picker">
-              <label for="canvasBgColorInput">Cor de Fundo:</label>
-              <input type="color" id="canvasBgColorInput" value="#0f172a">
+
+            <!-- Solid Background Section -->
+            <div id="bgSolidControls">
+              <div class="bg-color-swatches">
+                <button class="swatch-btn" data-color="#0f172a" style="background: #0f172a;" title="Azul Escuro"></button>
+                <button class="swatch-btn" data-color="#000000" style="background: #000000;" title="Preto Puro"></button>
+                <button class="swatch-btn" data-color="#b91c1c" style="background: #b91c1c;" title="Vermelho YouTube"></button>
+                <button class="swatch-btn" data-color="#1e3a8a" style="background: #1e3a8a;" title="Azul"></button>
+                <button class="swatch-btn" data-color="#047857" style="background: #047857;" title="Verde"></button>
+                <button class="swatch-btn" data-color="#6d28d9" style="background: #6d28d9;" title="Roxo"></button>
+                <button class="swatch-btn" data-color="#ff5722" style="background: #ff5722;" title="Laranja TP"></button>
+                <button class="swatch-btn" data-color="#ffffff" style="background: #ffffff;" title="Branco"></button>
+              </div>
+              
+              <div class="custom-bg-picker">
+                <label for="canvasBgColorInput">Cor de Fundo:</label>
+                <input type="color" id="canvasBgColorInput" value="#0f172a">
+              </div>
+            </div>
+
+            <!-- Gradient Background Section -->
+            <div id="bgGradientControls" class="hidden">
+              <div class="gradient-presets-grid" id="bgGradientPresets">
+                <button type="button" class="gradient-swatch-btn" data-color1="#000000" data-color2="#7f1d1d" data-dir="vertical" style="background: linear-gradient(to bottom, #000000, #7f1d1d);" title="YouTube Dark (Preto / Vermelho)"></button>
+                <button type="button" class="gradient-swatch-btn" data-color1="#ff5722" data-color2="#3b0764" data-dir="diagonal" style="background: linear-gradient(135deg, #ff5722, #3b0764);" title="Sunset Fogo (Laranja / Roxo)"></button>
+                <button type="button" class="gradient-swatch-btn" data-color1="#1e3a8a" data-color2="#050811" data-dir="vertical" style="background: linear-gradient(to bottom, #1e3a8a, #050811);" title="Noturno Profundo (Azul / Preto)"></button>
+                <button type="button" class="gradient-swatch-btn" data-color1="#6d28d9" data-color2="#06b6d4" data-dir="diagonal" style="background: linear-gradient(135deg, #6d28d9, #06b6d4);" title="Cyberpunk (Roxo / Ciano)"></button>
+                <button type="button" class="gradient-swatch-btn" data-color1="#022c22" data-color2="#059669" data-dir="vertical" style="background: linear-gradient(to bottom, #022c22, #059669);" title="Esmeralda Matrix"></button>
+                <button type="button" class="gradient-swatch-btn" data-color1="#334155" data-color2="#0f172a" data-dir="radial" style="background: radial-gradient(circle, #334155, #0f172a);" title="Spotlight Studio"></button>
+                <button type="button" class="gradient-swatch-btn" data-color1="#b45309" data-color2="#78350f" data-dir="vertical" style="background: linear-gradient(to bottom, #b45309, #78350f);" title="Dourado Ouro"></button>
+                <button type="button" class="gradient-swatch-btn" data-color1="#7f1d1d" data-color2="#000000" data-dir="radial" style="background: radial-gradient(circle, #7f1d1d, #000000);" title="Spotlight Vermelho"></button>
+              </div>
+
+              <div class="gradient-colors-row">
+                <div class="form-group">
+                  <label for="canvasBgGradColor1">Cor 1:</label>
+                  <div class="color-input-wrapper">
+                    <input type="color" id="canvasBgGradColor1" value="#000000">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="canvasBgGradColor2">Cor 2:</label>
+                  <div class="color-input-wrapper">
+                    <input type="color" id="canvasBgGradColor2" value="#7f1d1d">
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-top: 6px;">
+                <label for="canvasBgGradDir" style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 2px; display: block;">Direção / Tipo:</label>
+                <select id="canvasBgGradDir" class="form-select">
+                  <option value="vertical" selected>Vertical (↓)</option>
+                  <option value="horizontal">Horizontal (→)</option>
+                  <option value="diagonal">Diagonal (↘)</option>
+                  <option value="radial">Spotlight Radial (⦿)</option>
+                </select>
+              </div>
+
+              <div class="form-group" style="margin-top: 6px;">
+                <label class="checkbox-label" style="font-size: 0.75rem; display: flex; align-items: center; gap: 6px; cursor: pointer; color: var(--text-muted);">
+                  <input type="checkbox" id="canvasBgGradTransparent">
+                  <span>Desvanecer para Transparente</span>
+                </label>
+              </div>
             </div>
 
             <div class="tool-divider"></div>
@@ -252,11 +323,6 @@
             <!-- Canvas Workspace: holds all canvas artboards in 2D space -->
             <div class="canvas-workspace" id="canvasWorkspace">
               <!-- Canvas artboards generated dynamically by CanvasEngine -->
-            </div>
-            
-            <!-- Paste Instruction Banner -->
-            <div class="paste-banner">
-              <span>📋 Dica: Pressione <strong>Ctrl + V</strong> (ou <strong>Cmd + V</strong>) para colar imagens. Use os botões <strong>+</strong> nas bordas para criar novos canvas.</span>
             </div>
 
             <!-- Floating Zoom Controls -->
@@ -322,7 +388,17 @@
                 </div>
               </div>
 
-              <div class="form-row">
+              <!-- Text Fill Mode Toggle -->
+              <div class="form-group">
+                <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 3px;">Preenchimento do Texto:</label>
+                <div class="btn-group-segmented" id="textFillTypeSegmented">
+                  <button type="button" class="btn-seg active" id="btnTextFillSolid" data-fill="solid">Sólido</button>
+                  <button type="button" class="btn-seg" id="btnTextFillGradient" data-fill="gradient">Gradiente</button>
+                </div>
+              </div>
+
+              <!-- Solid Text Color Controls -->
+              <div id="textSolidColorGroup" class="form-row">
                 <div class="form-group">
                   <label for="propTextColor">Cor do Texto:</label>
                   <div class="color-input-wrapper">
@@ -337,6 +413,55 @@
                     <option value="700">Negrito</option>
                     <option value="900" selected>Extra Black (900)</option>
                   </select>
+                </div>
+              </div>
+
+              <!-- Gradient Text Color Controls -->
+              <div id="textGradientGroup" class="form-group hidden">
+                <div class="style-presets-section" style="margin-top: 0; margin-bottom: 8px;">
+                  <label style="font-size: 0.75rem;">Presets de Gradiente:</label>
+                  <div class="preset-buttons text-grad-presets" id="textGradientPresets">
+                    <button type="button" class="style-preset-btn" data-tcolor1="#ffe600" data-tcolor2="#ff3b00" data-tdir="vertical">🔥 Fogo</button>
+                    <button type="button" class="style-preset-btn" data-tcolor1="#ffffff" data-tcolor2="#f59e0b" data-tdir="vertical">⭐ Ouro</button>
+                    <button type="button" class="style-preset-btn" data-tcolor1="#00f0ff" data-tcolor2="#9333ea" data-tdir="vertical">⚡ Neon</button>
+                    <button type="button" class="style-preset-btn" data-tcolor1="#a3e635" data-tcolor2="#16a34a" data-tdir="vertical">🍏 Verde</button>
+                    <button type="button" class="style-preset-btn" data-tcolor1="#ffffff" data-tcolor2="#94a3b8" data-tdir="vertical">💎 Prata</button>
+                    <button type="button" class="style-preset-btn" data-tcolor1="#ff70a6" data-tcolor2="#ff007f" data-tdir="vertical">🌸 Pink</button>
+                  </div>
+                </div>
+
+                <div class="gradient-colors-row">
+                  <div class="form-group">
+                    <label for="propTextGradColor1">Cor 1 (Topo):</label>
+                    <div class="color-input-wrapper">
+                      <input type="color" id="propTextGradColor1" value="#ffe600">
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="propTextGradColor2">Cor 2 (Base):</label>
+                    <div class="color-input-wrapper">
+                      <input type="color" id="propTextGradColor2" value="#ff3b00">
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-row" style="margin-top: 6px;">
+                  <div class="form-group">
+                    <label for="propTextGradDir" style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 2px; display: block;">Direção:</label>
+                    <select id="propTextGradDir" class="form-select">
+                      <option value="vertical" selected>Vertical (↓ Topo-Base)</option>
+                      <option value="horizontal">Horizontal (→)</option>
+                      <option value="diagonal">Diagonal (↘)</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="propFontWeightGrad" style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 2px; display: block;">Peso / Estilo:</label>
+                    <select id="propFontWeightGrad" class="form-select">
+                      <option value="400">Normal</option>
+                      <option value="700">Negrito</option>
+                      <option value="900" selected>Extra Black (900)</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
@@ -517,19 +642,155 @@
             <!-- Context Inspector for SHAPE / BADGE -->
             <div class="inspector-section hidden" id="shapeInspector">
               <h3>Propriedades da Forma</h3>
-              <div class="form-row">
+              <!-- Shape Fill Mode Toggle -->
+              <div class="form-group">
+                <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 3px;">Preenchimento da Forma:</label>
+                <div class="btn-group-segmented" id="shapeFillTypeSegmented">
+                  <button type="button" class="btn-seg active" id="btnShapeFillSolid" data-fill="solid">Sólido</button>
+                  <button type="button" class="btn-seg" id="btnShapeFillGradient" data-fill="gradient">Gradiente</button>
+                </div>
+              </div>
+
+              <!-- Solid Shape Fill -->
+              <div id="shapeSolidColorGroup" class="form-row">
                 <div class="form-group">
-                  <label for="propShapeColor">Cor de Preenchimento:</label>
-                  <input type="color" id="propShapeColor" value="#ff5722">
+                  <label for="propShapeColor">Cor da Forma:</label>
+                  <div class="color-input-wrapper">
+                    <input type="color" id="propShapeColor" value="#ff5722">
+                    <span class="color-hex" id="propShapeColorHex">#ff5722</span>
+                  </div>
                 </div>
                 <div class="form-group">
                   <label for="propShapeRadius">Arredondamento (<span id="propShapeRadiusVal">12</span>px):</label>
                   <input type="range" id="propShapeRadius" min="0" max="80" value="12">
                 </div>
               </div>
+
+              <!-- Gradient Shape Fill -->
+              <div id="shapeGradientGroup" class="hidden">
+                <div class="gradient-colors-row">
+                  <div class="form-group">
+                    <label for="propShapeGradColor1">Cor 1:</label>
+                    <div class="color-input-wrapper">
+                      <input type="color" id="propShapeGradColor1" value="#ff5722">
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="propShapeGradColor2">Cor 2:</label>
+                    <div class="color-input-wrapper">
+                      <input type="color" id="propShapeGradColor2" value="#b91c1c">
+                    </div>
+                  </div>
+                </div>
+                <div class="form-row" style="margin-top: 6px;">
+                  <div class="form-group">
+                    <label for="propShapeGradDir" style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 2px; display: block;">Direção:</label>
+                    <select id="propShapeGradDir" class="form-select">
+                      <option value="horizontal" selected>Horizontal (→)</option>
+                      <option value="vertical">Vertical (↓)</option>
+                      <option value="diagonal">Diagonal (↘)</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="propShapeRadiusGrad">Arredondamento (<span id="propShapeRadiusGradVal">12</span>px):</label>
+                    <input type="range" id="propShapeRadiusGrad" min="0" max="80" value="12">
+                  </div>
+                </div>
+                <div class="form-group" style="margin-top: 4px;">
+                  <label class="checkbox-label" style="font-size: 0.75rem; display: flex; align-items: center; gap: 6px; cursor: pointer; color: var(--text-muted);">
+                    <input type="checkbox" id="propShapeGradTransparent">
+                    <span>Desvanecer para Transparente</span>
+                  </label>
+                </div>
+              </div>
               <div class="form-group">
                 <label for="propShapeOpacity">Opacidade (<span id="propShapeOpacityVal">100</span>%):</label>
                 <input type="range" id="propShapeOpacity" min="5" max="100" value="100">
+              </div>
+            </div>
+
+            <!-- Context Inspector for GRADIENT LAYER -->
+            <div class="inspector-section hidden" id="gradientInspector">
+              <h3>Propriedades do Gradiente</h3>
+
+              <!-- Fill Screen / Canvas Quick Action -->
+              <div style="margin-bottom: 12px;">
+                <button type="button" class="btn btn-secondary btn-sm" id="btnGradLayerFitCanvas" style="width: 100%; justify-content: center; gap: 6px;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+                  <span>Preencher Canvas / Tela</span>
+                </button>
+              </div>
+
+              <!-- Gradient Mode Toggle: Color to Color vs Color to Transparent -->
+              <div class="form-group">
+                <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 3px;">Tipo de Gradiente:</label>
+                <div class="btn-group-segmented" id="gradLayerModeSegmented">
+                  <button type="button" class="btn-seg active" id="btnGradLayerModeTransparent" data-gmode="transparent">Cor → Transparente</button>
+                  <button type="button" class="btn-seg" id="btnGradLayerModeTwoColors" data-gmode="two-colors">Duas Cores</button>
+                </div>
+              </div>
+
+              <!-- Quick Overlays Presets -->
+              <div class="style-presets-section" style="margin-top: 4px; margin-bottom: 10px;">
+                <label style="font-size: 0.75rem;">Presets Rápidos de Fade:</label>
+                <div class="preset-buttons text-grad-presets" id="gradLayerPresets">
+                  <button type="button" class="style-preset-btn" data-gcolor1="#000000" data-gcolor2="transparent" data-gdir="bottom-up" title="Fade Preto para texto na base">🌑 Fade Base</button>
+                  <button type="button" class="style-preset-btn" data-gcolor1="#000000" data-gcolor2="transparent" data-gdir="top-down" title="Fade Preto no topo">🌌 Fade Topo</button>
+                  <button type="button" class="style-preset-btn" data-gcolor1="#000000" data-gcolor2="transparent" data-gdir="left-right" title="Fade Lateral preto">👈 Fade Lateral</button>
+                  <button type="button" class="style-preset-btn" data-gcolor1="#ffffff" data-gcolor2="transparent" data-gdir="radial" title="Spotlight suave">💡 Spotlight</button>
+                  <button type="button" class="style-preset-btn" data-gcolor1="#ff5722" data-gcolor2="transparent" data-gdir="radial" title="Glow Laranja">🔥 Glow Fogo</button>
+                  <button type="button" class="style-preset-btn" data-gcolor1="#06b6d4" data-gcolor2="transparent" data-gdir="bottom-up" title="Ciano para transparente">⚡ Glow Ciano</button>
+                </div>
+              </div>
+
+              <!-- Color Controls -->
+              <div class="gradient-colors-row" id="gradLayerColorsRow">
+                <div class="form-group">
+                  <label for="propGradLayerColor1" id="lblGradLayerColor1">Cor Principal:</label>
+                  <div class="color-input-wrapper">
+                    <input type="color" id="propGradLayerColor1" value="#000000">
+                    <span class="color-hex" id="propGradLayerColor1Hex">#000000</span>
+                  </div>
+                </div>
+                <div class="form-group" id="gradLayerColor2Group" style="display: none;">
+                  <label for="propGradLayerColor2">Cor 2:</label>
+                  <div class="color-input-wrapper">
+                    <input type="color" id="propGradLayerColor2" value="#7f1d1d">
+                    <span class="color-hex" id="propGradLayerColor2Hex">#7f1d1d</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Direction Controls & Invert Button -->
+              <div class="form-row" style="margin-top: 6px; align-items: flex-end;">
+                <div class="form-group" style="flex: 1;">
+                  <label for="propGradLayerDir" style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 2px; display: block;">Direção:</label>
+                  <select id="propGradLayerDir" class="form-select">
+                    <option value="bottom-up" selected>↑ Base para Cima</option>
+                    <option value="top-down">↓ Topo para Baixo</option>
+                    <option value="left-right">→ Esquerda para Direita</option>
+                    <option value="right-left">← Direita para Esquerda</option>
+                    <option value="diagonal">↘ Diagonal</option>
+                    <option value="radial">💡 Radial (Centro)</option>
+                  </select>
+                </div>
+                <div class="form-group" style="flex: 0 0 auto;">
+                  <button type="button" class="btn btn-secondary btn-sm" id="btnGradLayerInvert" title="Inverter Direção do Gradiente" style="height: 32px; padding: 0 10px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg>
+                    <span>Inverter</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="form-row" style="margin-top: 8px;">
+                <div class="form-group">
+                  <label for="propGradLayerOpacity">Opacidade (<span id="propGradLayerOpacityVal">100</span>%):</label>
+                  <input type="range" id="propGradLayerOpacity" min="5" max="100" value="100">
+                </div>
+                <div class="form-group">
+                  <label for="propGradLayerRadius">Cantos (<span id="propGradLayerRadiusVal">0</span>px):</label>
+                  <input type="range" id="propGradLayerRadius" min="0" max="80" value="0">
+                </div>
               </div>
             </div>
 
@@ -601,6 +862,18 @@
             <button id="carouselToggleNumberingBtn" class="btn btn-secondary btn-icon-toggle active" title="Ativar/Desativar numeração automática nos slides (ex: 1/5, 2/5)">
               <span style="font-weight: 800; font-size: 0.8rem;">1/N</span>
               <span>Numeração</span>
+            </button>
+
+            <!-- Magnetic Snapping & Smart Guides Toggle -->
+            <button id="carouselToggleSnappingBtn" class="btn btn-secondary btn-icon-toggle active" title="Alinhamento Magnético e Guias Inteligentes (Segure Alt para ajuste livre)">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 3v7a6 6 0 0 0 12 0V3"></path>
+                <line x1="4" y1="3" x2="8" y2="3"></line>
+                <line x1="16" y1="3" x2="20" y2="3"></line>
+                <line x1="6" y1="8" x2="8" y2="8"></line>
+                <line x1="16" y1="8" x2="20" y2="8"></line>
+              </svg>
+              <span>Guias Magnéticas</span>
             </button>
 
             <!-- Undo / Redo -->
@@ -699,6 +972,11 @@
             <button id="carouselToolAddBadge" class="tool-btn" title="Adicionar Tarja / Retângulo / Forma">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></svg>
               <span>Forma / Tarja</span>
+            </button>
+
+            <button id="carouselToolAddGradientLayer" class="tool-btn" title="Adicionar Camada de Gradiente / Fade">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 15h18" stroke-dasharray="2 2"/><path d="M3 9h18"/></svg>
+              <span>Gradiente</span>
             </button>
 
             <button id="carouselToolPanCanvas" class="tool-btn" title="Mover Tela / Pan (Atalho: H ou segure Espaço e arraste)">
@@ -983,6 +1261,97 @@
               </div>
             </div>
 
+            <!-- Context Inspector for GRADIENT LAYER -->
+            <div class="inspector-section hidden" id="carouselGradientInspector">
+              <h3>Propriedades do Gradiente</h3>
+
+              <div style="margin-bottom: 12px;">
+                <button type="button" class="btn btn-secondary btn-sm" id="carouselBtnGradFitSlide" style="width: 100%; justify-content: center; gap: 6px;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+                  <span>Preencher Slide / Tela</span>
+                </button>
+              </div>
+
+              <div class="form-group">
+                <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 3px;">Tipo de Gradiente:</label>
+                <div class="btn-group-segmented" id="carouselGradModeSegmented">
+                  <button type="button" class="btn-seg active" id="carouselBtnGradModeTransparent" data-gmode="transparent">Cor → Transparente</button>
+                  <button type="button" class="btn-seg" id="carouselBtnGradModeTwoColors" data-gmode="two-colors">Duas Cores</button>
+                </div>
+              </div>
+
+              <div class="style-presets-section" style="margin-top: 4px; margin-bottom: 10px;">
+                <label style="font-size: 0.75rem;">Presets Rápidos de Fade:</label>
+                <div class="preset-buttons text-grad-presets" id="carouselGradPresets">
+                  <button type="button" class="style-preset-btn" data-gcolor1="#000000" data-gcolor2="transparent" data-gdir="bottom-up" title="Fade Preto para texto na base">🌑 Fade Base</button>
+                  <button type="button" class="style-preset-btn" data-gcolor1="#000000" data-gcolor2="transparent" data-gdir="top-down" title="Fade Preto no topo">🌌 Fade Topo</button>
+                  <button type="button" class="style-preset-btn" data-gcolor1="#000000" data-gcolor2="transparent" data-gdir="left-right" title="Fade Lateral preto">👈 Fade Lateral</button>
+                  <button type="button" class="style-preset-btn" data-gcolor1="#ffffff" data-gcolor2="transparent" data-gdir="radial" title="Spotlight suave">💡 Spotlight</button>
+                  <button type="button" class="style-preset-btn" data-gcolor1="#ff5722" data-gcolor2="transparent" data-gdir="radial" title="Glow Laranja">🔥 Glow Fogo</button>
+                  <button type="button" class="style-preset-btn" data-gcolor1="#06b6d4" data-gcolor2="transparent" data-gdir="bottom-up" title="Ciano para transparente">⚡ Glow Ciano</button>
+                </div>
+              </div>
+
+              <div class="gradient-colors-row" id="carouselGradColorsRow">
+                <div class="form-group">
+                  <label for="carouselPropGradColor1">Cor Principal:</label>
+                  <div class="color-input-wrapper">
+                    <input type="color" id="carouselPropGradColor1" value="#000000">
+                    <span class="color-hex" id="carouselPropGradColor1Hex">#000000</span>
+                  </div>
+                </div>
+                <div class="form-group" id="carouselGradColor2Group" style="display: none;">
+                  <label for="carouselPropGradColor2">Cor 2:</label>
+                  <div class="color-input-wrapper">
+                    <input type="color" id="carouselPropGradColor2" value="#7f1d1d">
+                    <span class="color-hex" id="carouselPropGradColor2Hex">#7f1d1d</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-row" style="margin-top: 6px; align-items: flex-end;">
+                <div class="form-group" style="flex: 1;">
+                  <label for="carouselPropGradDir" style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 2px; display: block;">Direção:</label>
+                  <select id="carouselPropGradDir" class="form-select">
+                    <option value="bottom-up" selected>↑ Base para Cima</option>
+                    <option value="top-down">↓ Topo para Baixo</option>
+                    <option value="left-right">→ Esquerda para Direita</option>
+                    <option value="right-left">← Direita para Esquerda</option>
+                    <option value="diagonal">↘ Diagonal</option>
+                    <option value="radial">💡 Radial (Centro)</option>
+                  </select>
+                </div>
+                <div class="form-group" style="flex: 0 0 auto;">
+                  <button type="button" class="btn btn-secondary btn-sm" id="carouselBtnGradInvert" title="Inverter Direção do Gradiente" style="height: 32px; padding: 0 10px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg>
+                    <span>Inverter</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="form-row" style="margin-top: 8px;">
+                <div class="form-group">
+                  <label for="carouselPropGradOpacity">Opacidade (<span id="carouselPropGradOpacityVal">90</span>%):</label>
+                  <input type="range" id="carouselPropGradOpacity" min="5" max="100" value="90">
+                </div>
+                <div class="form-group">
+                  <label for="carouselPropGradRadius">Cantos (<span id="carouselPropGradRadiusVal">0</span>px):</label>
+                  <input type="range" id="carouselPropGradRadius" min="0" max="80" value="0">
+                </div>
+              </div>
+
+              <div class="inspector-actions" style="margin-top: 12px;">
+                <button type="button" id="carouselBtnDuplicateGrad" class="btn btn-secondary btn-sm">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  <span>Duplicar</span>
+                </button>
+                <button type="button" id="carouselBtnDeleteGrad" class="btn btn-danger btn-sm">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  <span>Excluir</span>
+                </button>
+              </div>
+            </div>
+
           </div>
 
         </div>
@@ -1243,6 +1612,11 @@
             </div>
 
             <div class="shortcut-item">
+              <span class="shortcut-desc">Ignorar Alinhamento Magnético</span>
+              <div class="shortcut-keys"><kbd>Alt</kbd> + <kbd>Arrastar</kbd></div>
+            </div>
+
+            <div class="shortcut-item">
               <span class="shortcut-desc">Recolher / Expandir Menu</span>
               <div class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>B</kbd></div>
             </div>
@@ -1265,6 +1639,6 @@
 
   <!-- JSZip for exporting carousel slides in batch -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <script src="dashboard.js?v=1.18.1"></script>
+  <script src="dashboard.js?v=1.21.0"></script>
 </body>
 </html>
