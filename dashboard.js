@@ -1070,6 +1070,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const propTextContent = document.getElementById('propTextContent');
   const propFontFamily = document.getElementById('propFontFamily');
   const propFontSize = document.getElementById('propFontSize');
+  const propLineHeight = document.getElementById('propLineHeight');
+  const propLineHeightVal = document.getElementById('propLineHeightVal');
+  const propLineHeightReset = document.getElementById('propLineHeightReset');
+  const textLineHeightPresets = document.getElementById('textLineHeightPresets');
   const btnTextFillSolid = document.getElementById('btnTextFillSolid');
   const btnTextFillGradient = document.getElementById('btnTextFillGradient');
   const textSolidColorGroup = document.getElementById('textSolidColorGroup');
@@ -1641,28 +1645,41 @@ document.addEventListener('DOMContentLoaded', () => {
             ? (el.origWidth / el.origHeight)
             : (el.img && el.img.naturalWidth && el.img.naturalHeight)
               ? (el.img.naturalWidth / el.img.naturalHeight)
-              : (el.width / el.height);
+              : (el.width && el.height ? el.width / el.height : 1);
+          const safeRatio = (Number.isFinite(origRatio) && origRatio > 0.001) ? origRatio : 1;
 
           const wasCovering = (el.width >= source.width * 0.9) && (el.height >= source.height * 0.9);
           if (wasCovering) {
-            const baseW = el.origWidth || (el.img && el.img.naturalWidth) || el.width;
-            const baseH = Math.round(baseW / origRatio);
+            const baseW = el.origWidth || (el.img && el.img.naturalWidth) || el.width || 300;
+            const baseH = Math.round(baseW / safeRatio);
             const coverScale = Math.max(target.width / baseW, target.height / baseH);
             clone.width = Math.round(baseW * coverScale);
-            clone.height = Math.round(clone.width / origRatio);
+            clone.height = Math.round(clone.width / safeRatio);
             clone.x = Math.round(target.width / 2);
             clone.y = Math.round(target.height / 2);
           } else {
-            clone.width = Math.max(20, Math.round(el.width * scale));
-            clone.height = Math.max(20, Math.round(clone.width / origRatio));
+            clone.width = Math.max(20, Math.round((el.width || 300) * scale));
+            clone.height = Math.max(20, Math.round(clone.width / safeRatio));
           }
+          clone.origWidth = el.origWidth || (el.img && el.img.naturalWidth) || clone.width;
+          clone.origHeight = el.origHeight || (el.img && el.img.naturalHeight) || clone.height;
         }
 
-        if (clone.type === 'image' && el.src) {
-          const img = new Image();
-          img.crossOrigin = 'anonymous';
-          img.src = el.src;
-          clone.img = img;
+        if (clone.type === 'image') {
+          if (el.img && (el.img.complete || el.img.naturalWidth > 0)) {
+            clone.img = el.img;
+          } else if (el.src) {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => {
+              clone.img = img;
+              if (!clone.origWidth) clone.origWidth = img.naturalWidth;
+              if (!clone.origHeight) clone.origHeight = img.naturalHeight;
+              this.render(target.id);
+            };
+            img.src = el.src;
+            clone.img = img;
+          }
         }
 
         return clone;
@@ -1687,7 +1704,7 @@ document.addEventListener('DOMContentLoaded', () => {
           'shadowEnabled', 'shadowColor', 'shadowBlur', 'shadowOffsetX', 'shadowOffsetY',
           'bgEnabled', 'bgColor', 'bgRadius', 'bgPadding',
           'opacity', 'rotation', 'borderRadius', 'borderEnabled', 'borderColor', 'borderWidth',
-          'flipH', 'flipV', 'mode', 'transparent', 'color1', 'color2', 'direction'
+          'flipH', 'flipV', 'mode', 'transparent', 'color1', 'color2', 'direction', 'lineHeight'
         ];
 
         props.forEach(p => {
@@ -1716,9 +1733,16 @@ document.addEventListener('DOMContentLoaded', () => {
             ? (sourceEl.origWidth / sourceEl.origHeight)
             : (sourceEl.img && sourceEl.img.naturalWidth && sourceEl.img.naturalHeight)
               ? (sourceEl.img.naturalWidth / sourceEl.img.naturalHeight)
-              : (sourceEl.width / sourceEl.height);
-          targetEl.width = Math.max(20, Math.round(sourceEl.width * scale));
-          targetEl.height = Math.max(20, Math.round(targetEl.width / origRatio));
+              : (sourceEl.width && sourceEl.height ? sourceEl.width / sourceEl.height : 1);
+          const safeRatio = (Number.isFinite(origRatio) && origRatio > 0.001) ? origRatio : 1;
+          targetEl.width = Math.max(20, Math.round((sourceEl.width || 300) * scale));
+          targetEl.height = Math.max(20, Math.round(targetEl.width / safeRatio));
+          if (!targetEl.img && sourceEl.img) {
+            targetEl.img = sourceEl.img;
+          }
+          if (!targetEl.src && sourceEl.src) {
+            targetEl.src = sourceEl.src;
+          }
         }
 
         this.render(target.id);
@@ -2372,20 +2396,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 ? (sourceEl.origWidth / sourceEl.origHeight)
                 : (sourceEl.img && sourceEl.img.naturalWidth && sourceEl.img.naturalHeight)
                   ? (sourceEl.img.naturalWidth / sourceEl.img.naturalHeight)
-                  : (sourceEl.width / sourceEl.height);
+                  : (sourceEl.width && sourceEl.height ? sourceEl.width / sourceEl.height : 1);
+              const safeRatio = (Number.isFinite(origRatio) && origRatio > 0.001) ? origRatio : 1;
 
               const wasCovering = (sourceEl.width >= linkedSource.width * 0.9) && (sourceEl.height >= linkedSource.height * 0.9);
               if (wasCovering) {
-                const baseW = sourceEl.origWidth || (sourceEl.img && sourceEl.img.naturalWidth) || sourceEl.width;
-                const baseH = Math.round(baseW / origRatio);
+                const baseW = sourceEl.origWidth || (sourceEl.img && sourceEl.img.naturalWidth) || sourceEl.width || 300;
+                const baseH = Math.round(baseW / safeRatio);
                 const coverScale = Math.max(w / baseW, newH / baseH);
                 el.width = Math.round(baseW * coverScale);
-                el.height = Math.round(el.width / origRatio);
+                el.height = Math.round(el.width / safeRatio);
                 el.x = Math.round(w / 2);
                 el.y = Math.round(newH / 2);
               } else {
-                el.width = Math.max(20, Math.round(sourceEl.width * scale));
-                el.height = Math.max(20, Math.round(el.width / origRatio));
+                el.width = Math.max(20, Math.round((sourceEl.width || 300) * scale));
+                el.height = Math.max(20, Math.round(el.width / safeRatio));
               }
             }
           } else {
@@ -2402,20 +2427,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 ? (el.origWidth / el.origHeight)
                 : (el.img && el.img.naturalWidth && el.img.naturalHeight)
                   ? (el.img.naturalWidth / el.img.naturalHeight)
-                  : (el.width / el.height);
+                  : (el.width && el.height ? el.width / el.height : 1);
+              const safeRatio = (Number.isFinite(origRatio) && origRatio > 0.001) ? origRatio : 1;
 
               const wasCovering = (el.width >= oldW * 0.9) && (el.height >= oldH * 0.9);
               if (wasCovering) {
-                const baseW = el.origWidth || (el.img && el.img.naturalWidth) || el.width;
-                const baseH = Math.round(baseW / origRatio);
+                const baseW = el.origWidth || (el.img && el.img.naturalWidth) || el.width || 300;
+                const baseH = Math.round(baseW / safeRatio);
                 const coverScale = Math.max(w / baseW, newH / baseH);
                 el.width = Math.round(baseW * coverScale);
-                el.height = Math.round(el.width / origRatio);
+                el.height = Math.round(el.width / safeRatio);
                 el.x = Math.round(w / 2);
                 el.y = Math.round(newH / 2);
               } else {
-                el.width = Math.max(20, Math.round(el.width * uniformScale));
-                el.height = Math.max(20, Math.round(el.width / origRatio));
+                el.width = Math.max(20, Math.round((el.width || 300) * uniformScale));
+                el.height = Math.max(20, Math.round(el.width / safeRatio));
               }
             }
           }
@@ -2661,16 +2687,29 @@ document.addEventListener('DOMContentLoaded', () => {
               ? (el.origWidth / el.origHeight)
               : (el.img && el.img.naturalWidth && el.img.naturalHeight)
                 ? (el.img.naturalWidth / el.img.naturalHeight)
-                : (el.width / el.height);
-            syncedEl.width = Math.max(20, Math.round(el.width * scale));
-            syncedEl.height = Math.max(20, Math.round(syncedEl.width / origRatio));
+                : (el.width && el.height ? el.width / el.height : 1);
+            const safeRatio = (Number.isFinite(origRatio) && origRatio > 0.001) ? origRatio : 1;
+            syncedEl.width = Math.max(20, Math.round((el.width || 300) * scale));
+            syncedEl.height = Math.max(20, Math.round(syncedEl.width / safeRatio));
+            syncedEl.origWidth = el.origWidth || (el.img && el.img.naturalWidth) || syncedEl.width;
+            syncedEl.origHeight = el.origHeight || (el.img && el.img.naturalHeight) || syncedEl.height;
           }
 
-          if (syncedEl.type === 'image' && el.src) {
-            const img = new Image();
-            img.crossOrigin = 'anonymous';
-            img.src = el.src;
-            syncedEl.img = img;
+          if (syncedEl.type === 'image') {
+            if (el.img && (el.img.complete || el.img.naturalWidth > 0)) {
+              syncedEl.img = el.img;
+            } else if (el.src) {
+              const img = new Image();
+              img.crossOrigin = 'anonymous';
+              img.onload = () => {
+                syncedEl.img = img;
+                if (!syncedEl.origWidth) syncedEl.origWidth = img.naturalWidth;
+                if (!syncedEl.origHeight) syncedEl.origHeight = img.naturalHeight;
+                this.render(target.id);
+              };
+              img.src = el.src;
+              syncedEl.img = img;
+            }
           }
 
           target.elements.push(syncedEl);
@@ -2687,7 +2726,8 @@ document.addEventListener('DOMContentLoaded', () => {
     getSelected() {
       const active = this.getActiveCanvas();
       if (!active) return null;
-      return active.elements.find(el => el.id === active.selectedId);
+      const selId = active.selectedId || this.selectedId;
+      return active.elements.find(el => el.id === selId);
     }
 
     deleteSelected() {
@@ -2752,16 +2792,29 @@ document.addEventListener('DOMContentLoaded', () => {
               ? (copy.origWidth / copy.origHeight)
               : (copy.img && copy.img.naturalWidth && copy.img.naturalHeight)
                 ? (copy.img.naturalWidth / copy.img.naturalHeight)
-                : (copy.width / copy.height);
-            syncedCopy.width = Math.max(20, Math.round(copy.width * scale));
-            syncedCopy.height = Math.max(20, Math.round(syncedCopy.width / origRatio));
+                : (copy.width && copy.height ? copy.width / copy.height : 1);
+            const safeRatio = (Number.isFinite(origRatio) && origRatio > 0.001) ? origRatio : 1;
+            syncedCopy.width = Math.max(20, Math.round((copy.width || 300) * scale));
+            syncedCopy.height = Math.max(20, Math.round(syncedCopy.width / safeRatio));
+            syncedCopy.origWidth = copy.origWidth || (copy.img && copy.img.naturalWidth) || syncedCopy.width;
+            syncedCopy.origHeight = copy.origHeight || (copy.img && copy.img.naturalHeight) || syncedCopy.height;
           }
 
-          if (syncedCopy.type === 'image' && copy.src) {
-            const img = new Image();
-            img.crossOrigin = 'anonymous';
-            img.src = copy.src;
-            syncedCopy.img = img;
+          if (syncedCopy.type === 'image') {
+            if (copy.img && (copy.img.complete || copy.img.naturalWidth > 0)) {
+              syncedCopy.img = copy.img;
+            } else if (copy.src) {
+              const img = new Image();
+              img.crossOrigin = 'anonymous';
+              img.onload = () => {
+                syncedCopy.img = img;
+                if (!syncedCopy.origWidth) syncedCopy.origWidth = img.naturalWidth;
+                if (!syncedCopy.origHeight) syncedCopy.origHeight = img.naturalHeight;
+                this.render(target.id);
+              };
+              img.src = copy.src;
+              syncedCopy.img = img;
+            }
           }
 
           target.elements.push(syncedCopy);
@@ -2915,7 +2968,8 @@ document.addEventListener('DOMContentLoaded', () => {
       ctx.textBaseline = 'middle';
 
       const lines = String(el.text || '').split('\n');
-      const lineHeight = el.fontSize * 1.15;
+      const lhMultiplier = el.lineHeight !== undefined ? Number(el.lineHeight) : 1.15;
+      const lineHeight = el.fontSize * lhMultiplier;
       const totalHeight = lines.length * lineHeight;
 
       // Calculate width & height bounding box
@@ -3318,6 +3372,18 @@ document.addEventListener('DOMContentLoaded', () => {
       };
     }
 
+    getCanvasAtClientCoords(clientX, clientY) {
+      const coords = this.clientToWorkspaceCoords(clientX, clientY);
+      for (let i = this.canvases.length - 1; i >= 0; i--) {
+        const c = this.canvases[i];
+        const b = this.getBoardBounds(c);
+        if (coords.x >= b.x && coords.x <= b.right && coords.y >= b.y && coords.y <= b.bottom) {
+          return c;
+        }
+      }
+      return this.getActiveCanvas();
+    }
+
     setupEventListeners() {
       // MOUSE WHEEL ZOOM ON CANVAS VIEWPORT
       if (canvasViewport) {
@@ -3569,6 +3635,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.dataTransfer.files && e.dataTransfer.files[0]) {
           const file = e.dataTransfer.files[0];
           if (file.type.startsWith('image/')) {
+            const targetCanvas = this.getCanvasAtClientCoords(e.clientX, e.clientY);
+            if (targetCanvas && targetCanvas.id !== this.activeCanvasId) {
+              this.setActiveCanvas(targetCanvas.id);
+            }
             const reader = new FileReader();
             reader.onload = (event) => {
               this.addImageFromSrc(event.target.result);
@@ -3621,13 +3691,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
 
+      const active = this.getActiveCanvas();
       if (hitElement) {
+        if (active) active.selectedId = hitElement.id;
         this.selectedId = hitElement.id;
         this.isDragging = true;
         this.initialElementState = { ...hitElement };
       } else {
         // Clicked on empty canvas!
         // Deselect, and immediately start panning the canvas so the user can position it easily
+        if (active) active.selectedId = null;
         this.selectedId = null;
         this.isPanning = true;
         this.panStartX = e.clientX - this.panX;
@@ -3869,6 +3942,12 @@ document.addEventListener('DOMContentLoaded', () => {
         propTextColor.value = sel.color || '#ffffff';
         propTextColorHex.textContent = sel.color || '#ffffff';
         propFontWeight.value = sel.fontWeight || '900';
+
+        if (propLineHeight) {
+          const lh = sel.lineHeight !== undefined ? Number(sel.lineHeight) : 1.15;
+          propLineHeight.value = lh;
+          if (propLineHeightVal) propLineHeightVal.textContent = lh.toFixed(2) + 'x';
+        }
 
         // Text Gradient vs Solid Fill Sync
         const isTextGrad = Boolean(sel.gradient && sel.gradient.enabled);
@@ -4534,6 +4613,54 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
   propFontSize.addEventListener('change', () => canvasEngine.saveHistory());
+
+  if (propLineHeight) {
+    propLineHeight.addEventListener('input', (e) => {
+      const sel = canvasEngine.getSelected();
+      if (sel && sel.type === 'text') {
+        const val = parseFloat(e.target.value);
+        sel.lineHeight = val;
+        if (propLineHeightVal) propLineHeightVal.textContent = val.toFixed(2) + 'x';
+        canvasEngine.render();
+        const active = canvasEngine.getActiveCanvas();
+        if (active) canvasEngine.syncElementUpdate(active, sel);
+      }
+    });
+    propLineHeight.addEventListener('change', () => canvasEngine.saveHistory());
+  }
+
+  if (propLineHeightReset) {
+    propLineHeightReset.addEventListener('click', () => {
+      const sel = canvasEngine.getSelected();
+      if (sel && sel.type === 'text') {
+        sel.lineHeight = 1.15;
+        if (propLineHeight) propLineHeight.value = 1.15;
+        if (propLineHeightVal) propLineHeightVal.textContent = '1.15x';
+        canvasEngine.render();
+        canvasEngine.saveHistory();
+        const active = canvasEngine.getActiveCanvas();
+        if (active) canvasEngine.syncElementUpdate(active, sel);
+      }
+    });
+  }
+
+  if (textLineHeightPresets) {
+    textLineHeightPresets.querySelectorAll('button[data-lh]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const sel = canvasEngine.getSelected();
+        if (sel && sel.type === 'text') {
+          const val = parseFloat(btn.dataset.lh);
+          sel.lineHeight = val;
+          if (propLineHeight) propLineHeight.value = val;
+          if (propLineHeightVal) propLineHeightVal.textContent = val.toFixed(2) + 'x';
+          canvasEngine.render();
+          canvasEngine.saveHistory();
+          const active = canvasEngine.getActiveCanvas();
+          if (active) canvasEngine.syncElementUpdate(active, sel);
+        }
+      });
+    });
+  }
 
   propTextColor.addEventListener('input', (e) => {
     const sel = canvasEngine.getSelected();
@@ -5406,6 +5533,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const carouselPropTextContent = document.getElementById('carouselPropTextContent');
   const carouselPropFontFamily = document.getElementById('carouselPropFontFamily');
   const carouselPropFontSize = document.getElementById('carouselPropFontSize');
+  const carouselPropLineHeight = document.getElementById('carouselPropLineHeight');
+  const carouselPropLineHeightVal = document.getElementById('carouselPropLineHeightVal');
+  const carouselPropLineHeightReset = document.getElementById('carouselPropLineHeightReset');
+  const carouselTextLineHeightPresets = document.getElementById('carouselTextLineHeightPresets');
   const carouselPropTextColor = document.getElementById('carouselPropTextColor');
   const carouselPropTextColorHex = document.getElementById('carouselPropTextColorHex');
   const carouselPropFontWeight = document.getElementById('carouselPropFontWeight');
@@ -6200,7 +6331,8 @@ document.addEventListener('DOMContentLoaded', () => {
           ctx.textBaseline = 'top';
 
           const lines = (el.text || '').split('\n');
-          const lineHeight = fontSize * 1.18;
+          const lhMultiplier = el.lineHeight !== undefined ? Number(el.lineHeight) : 1.18;
+          const lineHeight = fontSize * lhMultiplier;
           let textW = 0;
           lines.forEach(l => {
             const lw = ctx.measureText(l).width;
@@ -6726,6 +6858,11 @@ document.addEventListener('DOMContentLoaded', () => {
         carouselPropTextContent.value = sel.text || '';
         carouselPropFontFamily.value = sel.fontFamily || "'Montserrat', sans-serif";
         carouselPropFontSize.value = sel.fontSize || 64;
+        if (carouselPropLineHeight) {
+          const lh = sel.lineHeight !== undefined ? Number(sel.lineHeight) : 1.18;
+          carouselPropLineHeight.value = lh;
+          if (carouselPropLineHeightVal) carouselPropLineHeightVal.textContent = lh.toFixed(2) + 'x';
+        }
         carouselPropTextColor.value = sel.color || '#ffffff';
         carouselPropTextColorHex.textContent = sel.color || '#ffffff';
         carouselPropFontWeight.value = sel.fontWeight || '900';
@@ -7050,6 +7187,51 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         });
         carouselPropFontSize.addEventListener('change', () => this.saveHistory());
+      }
+
+      if (carouselPropLineHeight) {
+        carouselPropLineHeight.addEventListener('input', (e) => {
+          const active = this.getActiveSlide();
+          const sel = active ? active.elements.find(el => el.id === active.selectedId) : null;
+          if (sel && sel.type === 'text') {
+            const val = parseFloat(e.target.value);
+            sel.lineHeight = val;
+            if (carouselPropLineHeightVal) carouselPropLineHeightVal.textContent = val.toFixed(2) + 'x';
+            this.renderAll();
+          }
+        });
+        carouselPropLineHeight.addEventListener('change', () => this.saveHistory());
+      }
+
+      if (carouselPropLineHeightReset) {
+        carouselPropLineHeightReset.addEventListener('click', () => {
+          const active = this.getActiveSlide();
+          const sel = active ? active.elements.find(el => el.id === active.selectedId) : null;
+          if (sel && sel.type === 'text') {
+            sel.lineHeight = 1.18;
+            if (carouselPropLineHeight) carouselPropLineHeight.value = 1.18;
+            if (carouselPropLineHeightVal) carouselPropLineHeightVal.textContent = '1.18x';
+            this.renderAll();
+            this.saveHistory();
+          }
+        });
+      }
+
+      if (carouselTextLineHeightPresets) {
+        carouselTextLineHeightPresets.querySelectorAll('button[data-clh]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const active = this.getActiveSlide();
+            const sel = active ? active.elements.find(el => el.id === active.selectedId) : null;
+            if (sel && sel.type === 'text') {
+              const val = parseFloat(btn.dataset.clh);
+              sel.lineHeight = val;
+              if (carouselPropLineHeight) carouselPropLineHeight.value = val;
+              if (carouselPropLineHeightVal) carouselPropLineHeightVal.textContent = val.toFixed(2) + 'x';
+              this.renderAll();
+              this.saveHistory();
+            }
+          });
+        });
       }
 
       if (carouselPropTextColor) {
@@ -7688,6 +7870,7 @@ document.addEventListener('DOMContentLoaded', () => {
     { icon: '🔤', text: 'Dê dois cliques em um texto para editá-lo rapidamente direto pelo painel de propriedades.' },
     { icon: '🥞', text: 'Arraste as camadas na lista lateral para ajustar a ordem de sobreposição (frente/trás).' },
     { icon: '🧲', text: 'As <strong>Guias Magnéticas</strong> alinham ao centro da tela e com outros elementos! Segure <strong>Alt</strong> para ajuste livre.' },
+    { icon: '📏', text: 'Ajuste o <strong>Espaçamento entre Linhas</strong> nas ferramentas de texto para títulos mais compactos ou arejados!' },
     { icon: '🎯', text: 'Use o dropdown no topo da prancheta para trocar o formato da arte entre YouTube, Shorts, Stories e Banner.' }
   ];
 

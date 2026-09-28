@@ -55,7 +55,11 @@ npx netlify-cli deploy --prod --dir=.
     - **Linhas Guias Visuais:** Renderizadas em tempo real com destaque em magenta vibrante (`#ff007a`) para o centro do canvas e ciano brilhante (`#00e5ff`) para alinhamento entre elementos.
     - **Totalmente Limpas:** Renderizadas na camada de sobreposição vetorial, desaparecem instantaneamente ao soltar o mouse e nunca aparecem nas exportações de imagem.
     - **Ajuste Livre com Tecla Alt:** Segure a tecla `Alt` durante o arraste para ignorar temporariamente o alinhamento magnético e posicionar livremente pixel a pixel.
-    - **Botão Liga/Desliga:** Botão `🧲 Guias Magnéticas` na barra superior tanto no Criador de Thumbnails quanto no Criador de Carrosséis.
+  - **Espaçamento entre Linhas / Leading (v1.22.0):**
+    - Controle deslizante dinâmico de entrelinha (`0.70x` a `2.50x`) no Criador de Thumbnails e no Criador de Carrosséis.
+    - Presets rápidos de 1 clique: **Apertado (0.85x / 0.90x)** (perfeito para títulos empilhados de YouTube em caixa alta), **Justo (1.00x / 1.05x)**, **Padrão (1.15x / 1.18x)** e **Amplo (1.40x / 1.45x)**.
+    - Botão de reset rápido `↺` para restauração instantânea do valor padrão.
+    - Sincronização automática com a caixa de seleção, tarjas de fundo e multi-canvas conectados.
   - Tipografia de alto impacto (*Bebas Neue, Anton, Montserrat, etc.*) com contorno (*stroke*), sombras e tarjas.
   - Imagens com colagem direta via **Ctrl+V / Cmd+V**, espelhamento e controle de camadas.
   - Guia da **Safe Zone do YouTube** (evita cobrir o selo de duração).

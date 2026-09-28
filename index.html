@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TP Estúdio - Dashboard</title>
   <link rel="icon" href="icons/icon-32.png" type="image/png">
-  <link rel="stylesheet" href="dashboard.css?v=1.21.0">
+  <link rel="stylesheet" href="dashboard.css?v=1.22.1">
   <!-- Google Fonts para UI e Criação de Thumbnails -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,7 +21,7 @@
           <img src="icons/icon-48.png" alt="TP Estúdio" width="36" height="36">
           <div class="brand-text">
             <h2>TP Estúdio</h2>
-            <span class="badge">Dashboard v1.21.0</span>
+            <span class="badge">Dashboard v1.22.1</span>
           </div>
         </div>
         <button id="sidebarToggleBtn" class="sidebar-toggle-btn" title="Recolher barra lateral" aria-label="Recolher barra lateral">
@@ -385,6 +385,24 @@
                 <div class="form-group">
                   <label for="propFontSize">Tamanho:</label>
                   <input type="number" id="propFontSize" value="80" min="10" max="300">
+                </div>
+              </div>
+
+              <!-- Line Spacing / Leading -->
+              <div class="form-group text-line-height-group">
+                <div class="label-with-badge">
+                  <label for="propLineHeight">Espaçamento entre Linhas:</label>
+                  <span id="propLineHeightVal" class="slider-val-badge">1.15x</span>
+                </div>
+                <div class="slider-with-reset">
+                  <input type="range" id="propLineHeight" min="0.70" max="2.50" step="0.05" value="1.15">
+                  <button type="button" id="propLineHeightReset" class="btn-mini-reset" title="Restaurar padrão (1.15x)">↺</button>
+                </div>
+                <div class="preset-buttons text-lh-presets" id="textLineHeightPresets">
+                  <button type="button" class="style-preset-btn" data-lh="0.85">Apertado (0.85)</button>
+                  <button type="button" class="style-preset-btn" data-lh="1.00">Justo (1.00)</button>
+                  <button type="button" class="style-preset-btn" data-lh="1.15">Padrão (1.15)</button>
+                  <button type="button" class="style-preset-btn" data-lh="1.40">Amplo (1.40)</button>
                 </div>
               </div>
 
@@ -1094,6 +1112,24 @@
                 </div>
               </div>
 
+              <!-- Carousel Line Spacing / Leading -->
+              <div class="form-group text-line-height-group">
+                <div class="label-with-badge">
+                  <label for="carouselPropLineHeight">Espaçamento entre Linhas:</label>
+                  <span id="carouselPropLineHeightVal" class="slider-val-badge">1.18x</span>
+                </div>
+                <div class="slider-with-reset">
+                  <input type="range" id="carouselPropLineHeight" min="0.70" max="2.50" step="0.05" value="1.18">
+                  <button type="button" id="carouselPropLineHeightReset" class="btn-mini-reset" title="Restaurar padrão (1.18x)">↺</button>
+                </div>
+                <div class="preset-buttons text-lh-presets" id="carouselTextLineHeightPresets">
+                  <button type="button" class="style-preset-btn" data-clh="0.90">Apertado (0.90)</button>
+                  <button type="button" class="style-preset-btn" data-clh="1.05">Justo (1.05)</button>
+                  <button type="button" class="style-preset-btn" data-clh="1.18">Padrão (1.18)</button>
+                  <button type="button" class="style-preset-btn" data-clh="1.45">Amplo (1.45)</button>
+                </div>
+              </div>
+
               <div class="form-row">
                 <div class="form-group">
                   <label for="carouselPropTextColor">Cor do Texto:</label>
@@ -1639,6 +1675,6 @@
 
   <!-- JSZip for exporting carousel slides in batch -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <script src="dashboard.js?v=1.21.0"></script>
+  <script src="dashboard.js?v=1.22.1"></script>
 </body>
 </html>
