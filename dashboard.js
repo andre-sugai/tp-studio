@@ -216,36 +216,232 @@ document.addEventListener('DOMContentLoaded', () => {
   const templateCategoryInput = document.getElementById('templateCategoryInput');
   const templateTagsInput = document.getElementById('templateTagsInput');
   const templateContentInput = document.getElementById('templateContentInput');
+  const syncSupabaseBtn = document.getElementById('syncSupabaseBtn');
+  const syncStatusText = document.getElementById('syncStatusText');
 
-  // Load templates from localStorage
-  function loadTemplates() {
+  // Supabase Cloud Configuration (Exclusive for TP Studio Text Templates)
+  const SUPABASE_CONFIG = {
+    url: 'https://wxmollyrruawhnafgmyo.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind4bW9sbHlycnVhd2huYWZnbXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2MTE1MjgsImV4cCI6MjA4MjE4NzUyOH0.xGn-3MDCIjPj0SurvqLOwAWjIlUB3LptRtdupj-NrHI',
+    tableName: 'tp_studio_text_templates'
+  };
+
+  let supabaseClient = null;
+
+  function updateSyncUI(status, text) {
+    if (!syncSupabaseBtn || !syncStatusText) return;
+    syncSupabaseBtn.classList.remove('connected', 'syncing', 'error');
+    if (status) syncSupabaseBtn.classList.add(status);
+    syncStatusText.textContent = text;
+  }
+
+  function getSupabase() {
+    if (supabaseClient) return supabaseClient;
+    try {
+      if (window.supabase && typeof window.supabase.createClient === 'function') {
+        supabaseClient = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+        return supabaseClient;
+      }
+    } catch (e) {
+      console.warn('Erro ao inicializar Supabase Client:', e);
+    }
+    return null;
+  }
+
+  // Load templates: Fast local cache first, followed by live Supabase sync
+  async function loadTemplates() {
     try {
       const localData = localStorage.getItem(TEMPLATES_STORAGE_KEY);
       if (localData !== null) {
         const parsed = JSON.parse(localData);
-        if (Array.isArray(parsed)) {
+        if (Array.isArray(parsed) && parsed.length > 0) {
           templates = parsed;
         } else {
           templates = [...defaultTemplates];
-          saveTemplates();
         }
       } else {
         templates = [...defaultTemplates];
-        saveTemplates();
       }
     } catch (e) {
-      console.error('Erro ao carregar templates:', e);
+      console.error('Erro ao ler cache local de templates:', e);
       templates = [...defaultTemplates];
     }
     renderTemplates();
+
+    // Trigger cloud synchronization
+    await syncWithSupabase();
   }
 
-  // Save templates to localStorage
-  function saveTemplates() {
+  // Synchronize in-memory/local templates with Supabase cloud table
+  async function syncWithSupabase(showToastOnSuccess = false) {
+    const sb = getSupabase();
+    if (!sb) {
+      updateSyncUI('error', 'Nuvem Desconectada');
+      return;
+    }
+
+    try {
+      updateSyncUI('syncing', 'Sincronizando...');
+      const { data, error } = await sb
+        .from(SUPABASE_CONFIG.tableName)
+        .select('*')
+        .order('updated_at', { ascending: false });
+
+      if (error) {
+        console.error('Erro ao buscar templates no Supabase:', error);
+        updateSyncUI('error', 'Salvo Localmente');
+        return;
+      }
+
+      if (data && data.length > 0) {
+        // Map Supabase rows to local template format
+        const remoteTemplates = data.map(row => ({
+          id: row.id,
+          title: row.title,
+          category: row.category,
+          tags: Array.isArray(row.tags) ? row.tags : [],
+          content: row.content,
+          updatedAt: row.updated_at || row.created_at || new Date().toISOString()
+        }));
+
+        // Detect any local templates not yet uploaded to the cloud
+        const remoteIds = new Set(remoteTemplates.map(r => r.id));
+        const missingOnRemote = templates.filter(local => !remoteIds.has(local.id));
+
+        if (missingOnRemote.length > 0) {
+          const toInsert = missingOnRemote.map(t => ({
+            id: t.id,
+            title: t.title,
+            category: t.category || 'Geral',
+            tags: Array.isArray(t.tags) ? t.tags : [],
+            content: t.content,
+            updated_at: t.updatedAt || new Date().toISOString()
+          }));
+          await sb.from(SUPABASE_CONFIG.tableName).upsert(toInsert);
+          remoteTemplates.unshift(...missingOnRemote);
+        }
+
+        templates = remoteTemplates;
+        localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(templates));
+        renderTemplates();
+        updateSyncUI('connected', 'Supabase Conectado');
+        if (showToastOnSuccess) {
+          showToast('Templates sincronizados com o Supabase!', 'success');
+        }
+      } else {
+        // Table is empty in Supabase: migrate current templates
+        if (templates.length > 0) {
+          const toInsert = templates.map(t => ({
+            id: t.id,
+            title: t.title,
+            category: t.category || 'Geral',
+            tags: Array.isArray(t.tags) ? t.tags : [],
+            content: t.content,
+            updated_at: t.updatedAt || new Date().toISOString()
+          }));
+          const { error: insertErr } = await sb.from(SUPABASE_CONFIG.tableName).upsert(toInsert);
+          if (insertErr) {
+            console.error('Erro ao migrar templates para o Supabase:', insertErr);
+          } else {
+            console.log('Templates migrados para o Supabase com sucesso!');
+          }
+        }
+        updateSyncUI('connected', 'Supabase Conectado');
+        if (showToastOnSuccess) {
+          showToast('Templates enviados para a nuvem!', 'success');
+        }
+      }
+    } catch (err) {
+      console.error('Falha de conexão com o Supabase:', err);
+      updateSyncUI('error', 'Salvo Localmente');
+    }
+  }
+
+  // Save single template to Supabase & localStorage
+  async function saveSingleTemplate(tpl) {
     try {
       localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(templates));
     } catch (e) {
-      console.error('Erro ao salvar templates:', e);
+      console.error('Erro ao salvar localmente:', e);
+    }
+
+    const sb = getSupabase();
+    if (sb) {
+      updateSyncUI('syncing', 'Salvando na Nuvem...');
+      try {
+        const { error } = await sb.from(SUPABASE_CONFIG.tableName).upsert({
+          id: tpl.id,
+          title: tpl.title,
+          category: tpl.category || 'Geral',
+          tags: Array.isArray(tpl.tags) ? tpl.tags : [],
+          content: tpl.content,
+          updated_at: tpl.updatedAt || new Date().toISOString()
+        });
+        if (error) {
+          console.error('Erro ao salvar no Supabase:', error);
+          updateSyncUI('error', 'Salvo Localmente');
+        } else {
+          updateSyncUI('connected', 'Supabase Conectado');
+        }
+      } catch (err) {
+        console.error('Exceção ao salvar no Supabase:', err);
+        updateSyncUI('error', 'Salvo Localmente');
+      }
+    }
+  }
+
+  // Delete single template from Supabase & localStorage
+  async function deleteSingleTemplate(id) {
+    try {
+      localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(templates));
+    } catch (e) {
+      console.error('Erro ao salvar localmente:', e);
+    }
+
+    const sb = getSupabase();
+    if (sb) {
+      updateSyncUI('syncing', 'Removendo da Nuvem...');
+      try {
+        const { error } = await sb.from(SUPABASE_CONFIG.tableName).delete().eq('id', id);
+        if (error) {
+          console.error('Erro ao excluir no Supabase:', error);
+          updateSyncUI('error', 'Salvo Localmente');
+        } else {
+          updateSyncUI('connected', 'Supabase Conectado');
+        }
+      } catch (err) {
+        console.error('Exceção ao excluir no Supabase:', err);
+        updateSyncUI('error', 'Salvo Localmente');
+      }
+    }
+  }
+
+  // Bulk save (for imports & fallback)
+  async function saveTemplates() {
+    try {
+      localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(templates));
+    } catch (e) {
+      console.error('Erro ao salvar templates localmente:', e);
+    }
+
+    const sb = getSupabase();
+    if (sb && templates.length > 0) {
+      updateSyncUI('syncing', 'Salvando na Nuvem...');
+      try {
+        const payload = templates.map(t => ({
+          id: t.id,
+          title: t.title,
+          category: t.category || 'Geral',
+          tags: Array.isArray(t.tags) ? t.tags : [],
+          content: t.content,
+          updated_at: t.updatedAt || new Date().toISOString()
+        }));
+        await sb.from(SUPABASE_CONFIG.tableName).upsert(payload);
+        updateSyncUI('connected', 'Supabase Conectado');
+      } catch (err) {
+        console.error('Erro no upsert em lote no Supabase:', err);
+        updateSyncUI('error', 'Salvo Localmente');
+      }
     }
   }
 
@@ -381,8 +577,8 @@ document.addEventListener('DOMContentLoaded', () => {
       delBtn.addEventListener('click', async () => {
         if (confirm(`Deseja realmente excluir o template "${tpl.title}"?`)) {
           templates = templates.filter(t => t.id !== tpl.id);
-          await saveTemplates();
           renderTemplates();
+          await deleteSingleTemplate(tpl.id);
           showToast('Template excluído com sucesso!', 'success');
         }
       });
@@ -470,7 +666,10 @@ document.addEventListener('DOMContentLoaded', () => {
             content,
             updatedAt: new Date().toISOString()
           };
-          showToast('Template atualizado com sucesso!', 'success');
+          closeModal();
+          renderTemplates();
+          await saveSingleTemplate(templates[index]);
+          showToast('Template atualizado e salvo na nuvem!', 'success');
         }
       } else {
         // Create new
@@ -483,12 +682,11 @@ document.addEventListener('DOMContentLoaded', () => {
           updatedAt: new Date().toISOString()
         };
         templates.unshift(newTpl);
-        showToast('Novo template salvo!', 'success');
+        closeModal();
+        renderTemplates();
+        await saveSingleTemplate(newTpl);
+        showToast('Novo template salvo na nuvem!', 'success');
       }
-
-      await saveTemplates();
-      closeModal();
-      renderTemplates();
     });
   }
 
@@ -550,6 +748,14 @@ document.addEventListener('DOMContentLoaded', () => {
         importFileInput.value = '';
       };
       reader.readAsText(file);
+    });
+  }
+
+  // Sync with Supabase Button
+  if (syncSupabaseBtn) {
+    syncSupabaseBtn.addEventListener('click', async () => {
+      showToast('Sincronizando com a nuvem do Supabase...', 'info');
+      await syncWithSupabase(true);
     });
   }
 

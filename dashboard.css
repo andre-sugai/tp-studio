@@ -440,6 +440,70 @@ body {
   gap: 10px;
 }
 
+/* Supabase Sync Status Indicator */
+.sync-status-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 8px 12px;
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sync-status-btn:hover {
+  background: var(--bg-surface-hover);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: var(--text-main);
+}
+
+.sync-status-btn .sync-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #eab308; /* yellow: connecting */
+  box-shadow: 0 0 8px rgba(234, 179, 8, 0.6);
+  display: inline-block;
+  flex-shrink: 0;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.sync-status-btn.connected {
+  border-color: rgba(34, 197, 94, 0.3);
+  color: #86efac;
+}
+
+.sync-status-btn.connected .sync-dot {
+  background-color: #22c55e; /* green */
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.8);
+}
+
+.sync-status-btn.syncing .sync-dot {
+  background-color: #3b82f6; /* blue */
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.9);
+  animation: syncPulseDot 1s infinite alternate;
+}
+
+.sync-status-btn.error {
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+}
+
+.sync-status-btn.error .sync-dot {
+  background-color: #ef4444; /* red */
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
+}
+
+@keyframes syncPulseDot {
+  from { opacity: 0.4; transform: scale(0.85); }
+  to { opacity: 1; transform: scale(1.25); }
+}
+
 .filter-bar {
   display: flex;
   flex-wrap: wrap;

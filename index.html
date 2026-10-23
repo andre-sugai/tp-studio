@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TP Estúdio - Dashboard</title>
   <link rel="icon" href="icons/icon-32.png" type="image/png">
-  <link rel="stylesheet" href="dashboard.css?v=1.22.1">
+  <link rel="stylesheet" href="dashboard.css?v=1.23.0">
   <!-- Google Fonts para UI e Criação de Thumbnails -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,7 +21,7 @@
           <img src="icons/icon-48.png" alt="TP Estúdio" width="36" height="36">
           <div class="brand-text">
             <h2>TP Estúdio</h2>
-            <span class="badge">Dashboard v1.22.1</span>
+            <span class="badge">Dashboard v1.23.0</span>
           </div>
         </div>
         <button id="sidebarToggleBtn" class="sidebar-toggle-btn" title="Recolher barra lateral" aria-label="Recolher barra lateral">
@@ -71,6 +71,10 @@
             <p class="subtitle">Guarde descrições de vídeos, links frequentes, assinaturas e estruturas para copiar com 1 clique.</p>
           </div>
           <div class="header-actions">
+            <button id="syncSupabaseBtn" class="btn btn-secondary sync-status-btn" title="Status da sincronização em nuvem (Supabase)">
+              <span class="sync-dot"></span>
+              <span id="syncStatusText">Conectando Nuvem...</span>
+            </button>
             <button id="importTemplatesBtn" class="btn btn-secondary" title="Restaurar de arquivo JSON">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               <span>Importar</span>
@@ -1675,6 +1679,8 @@
 
   <!-- JSZip for exporting carousel slides in batch -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <script src="dashboard.js?v=1.22.1"></script>
+  <!-- Supabase JS Client for Cloud Persistence -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="dashboard.js?v=1.23.0"></script>
 </body>
 </html>

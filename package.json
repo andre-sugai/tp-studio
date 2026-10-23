@@ -1,6 +1,6 @@
 {
   "name": "tp-studio",
-  "version": "1.22.1",
+  "version": "1.23.0",
   "description": "TP Estúdio - Web Dashboard & Estúdio de Thumbnails",
   "scripts": {
     "start": "npx serve ."
